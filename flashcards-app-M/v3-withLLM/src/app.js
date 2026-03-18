@@ -372,7 +372,7 @@ function flipCurrentCard() {
 }
 
 function showPreviousCard() {
-  if (isStudyEditing || getStudyEligibleCards().length === 0) {
+  if (isStudyEditing || cards.length === 0) {
     return;
   }
 
@@ -380,13 +380,7 @@ function showPreviousCard() {
     studyRoundInteractionStarted = true;
   }
 
-  if (deferKnownOmissionForCurrent) {
-    deferKnownOmissionForCurrent = false;
-  }
-
-  if (studyOrder.length !== getStudyEligibleCards().length) {
-    rebuildStudyOrder();
-  }
+  deferKnownOmissionForCurrent = false;
 
   studyPosition = (studyPosition - 1 + studyOrder.length) % studyOrder.length;
   showingFront = true;
@@ -395,7 +389,7 @@ function showPreviousCard() {
 }
 
 function showNextCard() {
-  if (isStudyEditing || getStudyEligibleCards().length === 0) {
+  if (isStudyEditing || cards.length === 0) {
     return;
   }
 
@@ -403,16 +397,14 @@ function showNextCard() {
     studyRoundInteractionStarted = true;
   }
 
-  if (deferKnownOmissionForCurrent) {
-    deferKnownOmissionForCurrent = false;
-  }
+  deferKnownOmissionForCurrent = false;
 
   const isEndOfCurrentRound = studyPosition === studyOrder.length - 1;
   if (isEndOfCurrentRound) {
     // Check AI flow BEFORE resetting so the full round state is still visible.
     void maybeRunAiFlow();
-    // Start a fresh round from current unknown cards only.
-    rebuildStudyOrder();
+    // Start a fresh round from unknown cards only.
+    rebuildStudyOrder(null, true);
     resetRoundTracking();
     if (studyOrder.length === 0) {
       showingFront = true;
@@ -675,7 +667,7 @@ function toggleShuffle() {
 
   if (shuffleEnabled) {
     // Start shuffle mode with a fresh randomized deck immediately.
-    studyOrder = getStudyEligibleCards().map((card) => card.id);
+    studyOrder = cards.map((card) => card.id);
     shuffleInPlace(studyOrder);
     studyPosition = 0;
   } else {
@@ -709,12 +701,10 @@ function handleStudyKnownChange(event) {
     cardPosition.textContent = "Marked as known. Press Next or Previous to continue.";
   } else {
     deferKnownOmissionForCurrent = false;
-    rebuildStudyOrder(card.id);
   }
 
   saveCards();
   renderList();
-
   if (!isMarkingKnown) {
     renderStudyCard();
   }
@@ -722,9 +712,10 @@ function handleStudyKnownChange(event) {
   void maybeRunAiFlow();
 }
 
-function rebuildStudyOrder(preferredCardId = null) {
+function rebuildStudyOrder(preferredCardId = null, unknownOnly = false) {
   const previousCardId = preferredCardId ?? studyOrder[studyPosition] ?? null;
-  const orderedIds = getStudyEligibleCards().map((card) => card.id);
+  const source = unknownOnly ? getStudyEligibleCards() : cards;
+  const orderedIds = source.map((card) => card.id);
 
   if (shuffleEnabled) {
     shuffleInPlace(orderedIds);
