@@ -598,10 +598,17 @@
       <div class="menu-title">Capstone Project</div>
       <p class="menu-desc">Advanced projects combining all course skills.</p>
       <div class="grid">
-        <div class="card" onclick="goTo('language-learning')">
+        <div class="card" onclick="goTo('language-learning-m')">
           <div class="card-icon">🌍</div>
           <div class="card-name">Language Learning</div>
           <div class="card-desc">Vocabulary builder with AI-powered word lookup and learning tracking.</div>
+          <div class="card-badge m">MB</div>
+        </div>
+        <div class="card" onclick="goTo('language-learning-b')">
+          <div class="card-icon">🌐</div>
+          <div class="card-name">Language Learning</div>
+          <div class="card-desc">Vocabulary builder with AI-powered word lookup and learning tracking.</div>
+          <div class="card-badge b">BB</div>
         </div>
         <div class="card" onclick="openApp('Recipe Vault', '/apps/recipe-vault-M', 'recipe-vault-cocobean-M/README.md', null)">
           <div class="card-icon">🍳</div>
@@ -613,50 +620,60 @@
     </div>
   </div>
 
-  <!-- ── Language Learning versions ── -->
-  <div class="screen" id="screen-language-learning">
+  <!-- ── Language Learning MB versions ── -->
+  <div class="screen" id="screen-language-learning-m">
     <div class="menu-screen">
       <button class="back-btn" onclick="goBack()">← Back</button>
       <div class="menu-title">Language Learning — Versions</div>
       <div class="versions-grid">
-        <div class="version-card" onclick="openApp('Language Learning M — V1', '/apps/language-learning-app-M/v1', 'language-learning-app-M/promts-learner.md', null)">
-          <div class="version-label">Model — V1</div>
+        <div class="version-card" onclick="openApp('Language Learning — V1', '/apps/language-learning-app-M/v1', 'language-learning-app-M/promts-learner.md', null)">
+          <div class="version-label">Version 1</div>
           <div class="version-name">MVP with Persistence</div>
           <div class="version-desc">Vocabulary notes with localStorage. No external API.</div>
         </div>
-        <div class="version-card" onclick="openApp('Language Learning M — V2', '/apps/language-learning-app-M/v2', 'language-learning-app-M/promts-learner.md', null)">
-          <div class="version-label">Model — V2</div>
+        <div class="version-card" onclick="openApp('Language Learning — V2', '/apps/language-learning-app-M/v2', 'language-learning-app-M/promts-learner.md', null)">
+          <div class="version-label">Version 2</div>
           <div class="version-name">Adds LLM</div>
           <div class="version-desc">AI-powered vocabulary lookup using OpenAI.</div>
-        </div>
-        <div class="version-card" onclick="openApp('Language Learning B — V1', '/apps/language-learning-B/v1', 'language-learning-B/prompts-learner.md', null)">
-          <div class="version-label">Builder — V1</div>
-          <div class="version-name">MVP</div>
-          <div class="version-desc">Initial build with basic vocabulary tracking.</div>
-        </div>
-        <div class="version-card" onclick="openApp('Language Learning B — V2', '/apps/language-learning-B/v2', 'language-learning-B/prompts-learner.md', null)">
-          <div class="version-label">Builder — V2</div>
-          <div class="version-name">Adds Persistence</div>
-          <div class="version-desc">Adds server-side word storage.</div>
-        </div>
-        <div class="version-card" onclick="openApp('Language Learning B — V3', '/apps/language-learning-B/v3', 'language-learning-B/prompts-learner.md', null)">
-          <div class="version-label">Builder — V3</div>
-          <div class="version-name">Adds LLM</div>
-          <div class="version-desc">AI vocabulary lookup integrated.</div>
         </div>
       </div>
       <div class="prompts-section" id="prompts-sect-lang-m">
         <button class="prompts-toggle" onclick="togglePromptsSection('lang-m', 'language-learning-app-M/promts-learner.md')">
           <span class="prompts-toggle-icon" id="prompts-icon-lang-m">▶</span>
-          Prompts — Model versions
+          Prompts
           <span class="prompts-toggle-label">MB</span>
         </button>
         <div class="prompts-body md" id="prompts-body-lang-m" hidden></div>
       </div>
-      <div class="prompts-section" id="prompts-sect-lang-b" style="margin-top:0.75rem">
+    </div>
+  </div>
+
+  <!-- ── Language Learning BB versions ── -->
+  <div class="screen" id="screen-language-learning-b">
+    <div class="menu-screen">
+      <button class="back-btn" onclick="goBack()">← Back</button>
+      <div class="menu-title">Language Learning — Versions</div>
+      <div class="versions-grid">
+        <div class="version-card" onclick="openApp('Language Learning — V1', '/apps/language-learning-B/v1', 'language-learning-B/prompts-learner.md', null)">
+          <div class="version-label">Version 1</div>
+          <div class="version-name">MVP</div>
+          <div class="version-desc">Initial build with basic vocabulary tracking.</div>
+        </div>
+        <div class="version-card" onclick="openApp('Language Learning — V2', '/apps/language-learning-B/v2', 'language-learning-B/prompts-learner.md', null)">
+          <div class="version-label">Version 2</div>
+          <div class="version-name">Adds Persistence</div>
+          <div class="version-desc">Adds server-side word storage.</div>
+        </div>
+        <div class="version-card" onclick="openApp('Language Learning — V3', '/apps/language-learning-B/v3', 'language-learning-B/prompts-learner.md', null)">
+          <div class="version-label">Version 3</div>
+          <div class="version-name">Adds LLM</div>
+          <div class="version-desc">AI vocabulary lookup integrated.</div>
+        </div>
+      </div>
+      <div class="prompts-section" id="prompts-sect-lang-b">
         <button class="prompts-toggle" onclick="togglePromptsSection('lang-b', 'language-learning-B/prompts-learner.md')">
           <span class="prompts-toggle-icon" id="prompts-icon-lang-b">▶</span>
-          Prompts — Builder versions
+          Prompts
           <span class="prompts-toggle-label">BB</span>
         </button>
         <div class="prompts-body md" id="prompts-body-lang-b" hidden></div>
@@ -790,7 +807,8 @@
     'sleep-tracker': { label: 'Sleep Tracker', parent: 'module2' },
     'sleep-pattern': { label: 'Sleep Pattern', parent: 'module2' },
     'trivia-b': { label: 'Trivia Game', parent: 'module3' },
-    'language-learning': { label: 'Language Learning', parent: 'capstone' },
+    'language-learning-m': { label: 'Language Learning (MB)', parent: 'capstone' },
+    'language-learning-b': { label: 'Language Learning (BB)', parent: 'capstone' },
     'flashcards-m': { label: 'Flashcards Model', parent: 'throughline' },
     'flashcards-b': { label: 'Flashcards Builder', parent: 'throughline' },
   };
