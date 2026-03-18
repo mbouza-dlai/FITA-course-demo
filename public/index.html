@@ -227,6 +227,51 @@
 
     .no-prompts { color: var(--text-muted); font-style: italic; padding: 1rem; }
 
+    /* ── Collapsible Prompts section on version screens ── */
+    .prompts-section {
+      max-width: 1100px;
+      margin-top: 2rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .prompts-toggle {
+      width: 100%;
+      display: flex; align-items: center; gap: 0.6rem;
+      padding: 0.9rem 1.25rem;
+      background: var(--surface);
+      border: none; cursor: pointer;
+      font-size: 0.9rem; font-weight: 700; color: var(--text);
+      text-align: left;
+      transition: background var(--transition);
+    }
+    .prompts-toggle:hover { background: var(--surface2); }
+    .prompts-toggle-label { color: var(--accent3); font-size: 0.75rem; font-weight: 600; margin-left: auto; }
+    .prompts-toggle-icon {
+      font-size: 0.65rem; color: var(--text-muted);
+      transition: transform 0.2s;
+      display: inline-block;
+    }
+    .prompts-toggle-icon.open { transform: rotate(90deg); }
+    .prompts-body {
+      padding: 1.5rem;
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+      max-height: 500px;
+      overflow-y: auto;
+    }
+    .prompts-body.md h1 { font-size: 1.3rem; color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; margin-bottom: 1rem; }
+    .prompts-body.md h2 { font-size: 1.1rem; color: var(--accent3); margin-top: 1.5rem; margin-bottom: 0.5rem; }
+    .prompts-body.md h3 { font-size: 0.95rem; color: var(--text); margin-top: 1rem; margin-bottom: 0.3rem; }
+    .prompts-body.md p { margin-bottom: 0.75rem; font-size: 0.88rem; color: var(--text-muted); line-height: 1.65; }
+    .prompts-body.md ul, .prompts-body.md ol { margin-left: 1.5rem; margin-bottom: 0.75rem; }
+    .prompts-body.md li { margin-bottom: 0.3rem; font-size: 0.88rem; color: var(--text-muted); }
+    .prompts-body.md code { background: var(--surface2); padding: 2px 5px; border-radius: 4px; font-family: monospace; font-size: 0.82em; }
+    .prompts-body.md pre { background: var(--surface2); padding: 1rem; border-radius: 8px; overflow-x: auto; margin: 0.75rem 0; }
+    .prompts-body.md pre code { background: none; padding: 0; }
+    .prompts-body.md hr { border: none; border-top: 1px solid var(--border); margin: 1.25rem 0; }
+    .prompts-body.md strong { color: var(--text); font-weight: 700; }
+
     @media (max-width: 600px) {
       .grid { grid-template-columns: 1fr; }
       .menu-screen { padding: 1.5rem 1rem; }
@@ -341,6 +386,14 @@
           <div class="version-desc">Improved UI, multiple passages and better feedback.</div>
         </div>
       </div>
+      <div class="prompts-section" id="prompts-sect-touch-typing">
+        <button class="prompts-toggle" onclick="togglePromptsSection('touch-typing', 'touch-typing-B/prompts-learner.md')">
+          <span class="prompts-toggle-icon" id="prompts-icon-touch-typing">▶</span>
+          Prompts
+          <span class="prompts-toggle-label">BB</span>
+        </button>
+        <div class="prompts-body md" id="prompts-body-touch-typing" hidden></div>
+      </div>
     </div>
   </div>
 
@@ -365,6 +418,14 @@
           <div class="version-name">Polished</div>
           <div class="version-desc">Visual enhancements, sound alerts and session history.</div>
         </div>
+      </div>
+      <div class="prompts-section" id="prompts-sect-pomodoro">
+        <button class="prompts-toggle" onclick="togglePromptsSection('pomodoro', 'pomodoro-timer-B/prompts-learner.md')">
+          <span class="prompts-toggle-icon" id="prompts-icon-pomodoro">▶</span>
+          Prompts
+          <span class="prompts-toggle-label">BB</span>
+        </button>
+        <div class="prompts-body md" id="prompts-body-pomodoro" hidden></div>
       </div>
     </div>
   </div>
@@ -414,6 +475,14 @@
           <div class="version-desc">Charts, analytics and improved UI.</div>
         </div>
       </div>
+      <div class="prompts-section" id="prompts-sect-sleep-tracker">
+        <button class="prompts-toggle" onclick="togglePromptsSection('sleep-tracker', 'sleep-tracker-B/prompts-learner.md')">
+          <span class="prompts-toggle-icon" id="prompts-icon-sleep-tracker">▶</span>
+          Prompts
+          <span class="prompts-toggle-label">BB</span>
+        </button>
+        <div class="prompts-body md" id="prompts-body-sleep-tracker" hidden></div>
+      </div>
     </div>
   </div>
 
@@ -433,6 +502,14 @@
           <div class="version-name">JSON Storage</div>
           <div class="version-desc">Server-side JSON file persistence.</div>
         </div>
+      </div>
+      <div class="prompts-section" id="prompts-sect-sleep-pattern">
+        <button class="prompts-toggle" onclick="togglePromptsSection('sleep-pattern', 'sleep-pattern-app-M/promts-learner.md')">
+          <span class="prompts-toggle-icon" id="prompts-icon-sleep-pattern">▶</span>
+          Prompts
+          <span class="prompts-toggle-label">MB</span>
+        </button>
+        <div class="prompts-body md" id="prompts-body-sleep-pattern" hidden></div>
       </div>
     </div>
   </div>
@@ -476,6 +553,14 @@
           <div class="version-name">Polished</div>
           <div class="version-desc">Score tracking, categories, and improved UX.</div>
         </div>
+      </div>
+      <div class="prompts-section" id="prompts-sect-trivia-b">
+        <button class="prompts-toggle" onclick="togglePromptsSection('trivia-b', 'trivia-game-B/prompts-learner.md')">
+          <span class="prompts-toggle-icon" id="prompts-icon-trivia-b">▶</span>
+          Prompts
+          <span class="prompts-toggle-label">BB</span>
+        </button>
+        <div class="prompts-body md" id="prompts-body-trivia-b" hidden></div>
       </div>
     </div>
   </div>
@@ -534,6 +619,22 @@
           <div class="version-desc">AI vocabulary lookup integrated.</div>
         </div>
       </div>
+      <div class="prompts-section" id="prompts-sect-lang-m">
+        <button class="prompts-toggle" onclick="togglePromptsSection('lang-m', 'language-learning-app-M/promts-learner.md')">
+          <span class="prompts-toggle-icon" id="prompts-icon-lang-m">▶</span>
+          Prompts — Model versions
+          <span class="prompts-toggle-label">MB</span>
+        </button>
+        <div class="prompts-body md" id="prompts-body-lang-m" hidden></div>
+      </div>
+      <div class="prompts-section" id="prompts-sect-lang-b" style="margin-top:0.75rem">
+        <button class="prompts-toggle" onclick="togglePromptsSection('lang-b', 'language-learning-B/prompts-learner.md')">
+          <span class="prompts-toggle-icon" id="prompts-icon-lang-b">▶</span>
+          Prompts — Builder versions
+          <span class="prompts-toggle-label">BB</span>
+        </button>
+        <div class="prompts-body md" id="prompts-body-lang-b" hidden></div>
+      </div>
     </div>
   </div>
 
@@ -582,6 +683,14 @@
           <div class="version-desc">AI-powered card generation using OpenAI.</div>
         </div>
       </div>
+      <div class="prompts-section" id="prompts-sect-flashcards-m">
+        <button class="prompts-toggle" onclick="togglePromptsSection('flashcards-m', 'flashcards-app-M/promts-learner.md')">
+          <span class="prompts-toggle-icon" id="prompts-icon-flashcards-m">▶</span>
+          Prompts
+          <span class="prompts-toggle-label">MB</span>
+        </button>
+        <div class="prompts-body md" id="prompts-body-flashcards-m" hidden></div>
+      </div>
     </div>
   </div>
 
@@ -606,6 +715,14 @@
           <div class="version-name">Adds AI Generation</div>
           <div class="version-desc">AI card generation via LLM integration.</div>
         </div>
+      </div>
+      <div class="prompts-section" id="prompts-sect-flashcards-b">
+        <button class="prompts-toggle" onclick="togglePromptsSection('flashcards-b', 'flashcards-B/prompts-learner.md')">
+          <span class="prompts-toggle-icon" id="prompts-icon-flashcards-b">▶</span>
+          Prompts
+          <span class="prompts-toggle-label">BB</span>
+        </button>
+        <div class="prompts-body md" id="prompts-body-flashcards-b" hidden></div>
       </div>
     </div>
   </div>
@@ -693,6 +810,30 @@
   function jumpTo(id) {
     history.length = 0;
     showScreen(id);
+  }
+
+  // ── Collapsible Prompts on version screens ──────────────────────────────────
+  const _loadedPrompts = {};
+  function togglePromptsSection(id, file) {
+    const body = document.getElementById('prompts-body-' + id);
+    const icon = document.getElementById('prompts-icon-' + id);
+    const isHidden = body.hidden;
+    body.hidden = !isHidden;
+    icon.classList.toggle('open', isHidden);
+    if (isHidden && !_loadedPrompts[id]) {
+      _loadedPrompts[id] = true;
+      body.innerHTML = '<p class="loading">Loading prompts…</p>';
+      fetch('/api/prompts?file=' + encodeURIComponent(file))
+        .then(r => r.json())
+        .then(data => {
+          body.innerHTML = data.content
+            ? renderMarkdown(data.content)
+            : '<p class="no-prompts">No prompts file found for this app.</p>';
+        })
+        .catch(() => {
+          body.innerHTML = '<p class="no-prompts">Could not load prompts.</p>';
+        });
+    }
   }
 
   // ── App viewer ─────────────────────────────────────────────────────────────
