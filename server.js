@@ -63,6 +63,14 @@ app.get('/apps/sleep-tracker-B/v2/api/data', (req, res) => {
     res.json(data);
   } catch (e) { res.json([]); }
 });
+app.get('/apps/sleep-tracker-B/v2/api/entries', (req, res) => {
+  try {
+    const data = fs.existsSync(SLEEP_DATA_FILE)
+      ? JSON.parse(fs.readFileSync(SLEEP_DATA_FILE, 'utf8'))
+      : [];
+    res.json(data);
+  } catch (e) { res.json([]); }
+});
 app.post('/apps/sleep-tracker-B/v2/api/entries', (req, res) => {
   try {
     const data = fs.existsSync(SLEEP_DATA_FILE)
@@ -72,6 +80,16 @@ app.post('/apps/sleep-tracker-B/v2/api/entries', (req, res) => {
     data.push(entry);
     fs.writeFileSync(SLEEP_DATA_FILE, JSON.stringify(data, null, 2));
     res.json(entry);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+app.delete('/apps/sleep-tracker-B/v2/api/entries/:id', (req, res) => {
+  try {
+    const data = fs.existsSync(SLEEP_DATA_FILE)
+      ? JSON.parse(fs.readFileSync(SLEEP_DATA_FILE, 'utf8'))
+      : [];
+    const filtered = data.filter(e => String(e.id) !== String(req.params.id));
+    fs.writeFileSync(SLEEP_DATA_FILE, JSON.stringify(filtered, null, 2));
+    res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 app.use('/apps/sleep-tracker-B/v2', express.static(path.join(__dirname, 'sleep-tracker-B/v2')));

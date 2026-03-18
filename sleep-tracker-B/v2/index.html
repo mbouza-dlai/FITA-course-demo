@@ -279,17 +279,19 @@
     // ─── API helpers ──────────────────────────────────────────────────────────
     // All data now lives on the server (sleep-data.json); we talk to it via fetch.
 
+    const API_BASE = '/apps/sleep-tracker-B/v2/api/entries';
+
     const API = {
       /** Fetch all entries from the server. */
       async getEntries() {
-        const res = await fetch('/entries');
+        const res = await fetch(API_BASE);
         if (!res.ok) throw new Error('Failed to load entries.');
         return res.json();
       },
 
       /** Send a new entry to the server to be appended to the file. */
       async addEntry(entry) {
-        const res = await fetch('/entries', {
+        const res = await fetch(API_BASE, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(entry)
@@ -300,7 +302,7 @@
 
       /** Tell the server to delete the entry with the given id. */
       async deleteEntry(id) {
-        const res = await fetch(`/entries/${encodeURIComponent(id)}`, {
+        const res = await fetch(`${API_BASE}/${encodeURIComponent(id)}`, {
           method: 'DELETE'
         });
         if (!res.ok) throw new Error('Failed to delete entry.');
