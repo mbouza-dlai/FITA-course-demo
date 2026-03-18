@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FITA - Course DEMO</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface2: #334155;
+      --border: #475569;
+      --accent: #6366f1;
+      --accent2: #8b5cf6;
+      --accent3: #06b6d4;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --success: #10b981;
+      --warn: #f59e0b;
+      --radius: 12px;
+      --transition: 0.2s ease;
+    }
+
+    html, body { height: 100%; font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); }
+
+    /* ── Header ── */
+    .header {
+      padding: 1.5rem 2rem;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .header-logo {
+      width: 40px; height: 40px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem; font-weight: 900; color: white;
+      flex-shrink: 0;
+    }
+    .header-title { font-size: 1.5rem; font-weight: 700; }
+    .header-subtitle { font-size: 0.85rem; color: var(--text-muted); margin-top: 2px; }
+
+    .breadcrumb {
+      display: flex; align-items: center; gap: 0.5rem;
+      margin-left: auto;
+      font-size: 0.85rem; color: var(--text-muted);
+      flex-wrap: wrap;
+    }
+    .breadcrumb span.sep { color: var(--border); }
+    .breadcrumb a { color: var(--accent3); cursor: pointer; text-decoration: none; }
+    .breadcrumb a:hover { text-decoration: underline; }
+    .breadcrumb .current { color: var(--text); font-weight: 600; }
+
+    /* ── Main layout ── */
+    .main { height: calc(100vh - 73px); display: flex; flex-direction: column; overflow: hidden; }
+
+    /* ── Screens ── */
+    .screen { display: none; flex-direction: column; height: 100%; }
+    .screen.active { display: flex; }
+
+    /* ── Menu screens ── */
+    .menu-screen {
+      padding: 2.5rem 2rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .menu-title {
+      font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.8rem;
+    }
+    .menu-desc { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 2rem; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 1.25rem;
+      max-width: 1100px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      cursor: pointer;
+      transition: border-color var(--transition), transform var(--transition), box-shadow var(--transition);
+      display: flex; flex-direction: column; gap: 0.6rem;
+    }
+    .card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(99, 102, 241, 0.2);
+    }
+    .card-icon {
+      font-size: 2rem; width: 52px; height: 52px;
+      background: var(--surface2);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .card-name { font-size: 1.05rem; font-weight: 700; }
+    .card-desc { font-size: 0.83rem; color: var(--text-muted); line-height: 1.5; }
+    .card-badge {
+      display: inline-block; font-size: 0.7rem; font-weight: 600;
+      padding: 2px 8px; border-radius: 999px;
+      background: var(--surface2); color: var(--text-muted);
+      margin-top: 0.25rem; width: fit-content;
+    }
+    .card-badge.m { background: rgba(99,102,241,0.15); color: var(--accent); }
+    .card-badge.b { background: rgba(245,158,11,0.15); color: var(--warn); }
+
+    .versions-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1rem;
+      max-width: 1100px;
+    }
+
+    .version-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+      cursor: pointer;
+      transition: border-color var(--transition), transform var(--transition), box-shadow var(--transition);
+    }
+    .version-card:hover {
+      border-color: var(--accent3);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(6, 182, 212, 0.15);
+    }
+    .version-card .version-label {
+      font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--accent3); margin-bottom: 0.4rem;
+    }
+    .version-card .version-name { font-size: 1rem; font-weight: 700; }
+    .version-card .version-desc { font-size: 0.82rem; color: var(--text-muted); margin-top: 0.3rem; line-height: 1.45; }
+
+    /* ── Back button ── */
+    .back-btn {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      background: var(--surface2); border: 1px solid var(--border);
+      color: var(--text); font-size: 0.875rem; font-weight: 600;
+      padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer;
+      transition: background var(--transition), border-color var(--transition);
+      margin-bottom: 2rem;
+    }
+    .back-btn:hover { background: var(--border); }
+
+    /* ── App viewer screen ── */
+    #app-screen {
+      display: none;
+      flex-direction: column;
+      height: 100%;
+    }
+    #app-screen.active { display: flex; }
+
+    .app-tabs {
+      display: flex; gap: 0;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.5rem;
+      flex-shrink: 0;
+    }
+    .tab-btn {
+      padding: 0.9rem 1.25rem;
+      font-size: 0.88rem; font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer; border: none; background: none;
+      border-bottom: 2px solid transparent;
+      transition: color var(--transition), border-color var(--transition);
+    }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .tab-btn:hover { color: var(--text); }
+
+    .app-frame-container {
+      flex: 1; overflow: hidden; display: none;
+      background: white;
+    }
+    .app-frame-container.active { display: block; }
+    .app-frame-container iframe {
+      width: 100%; height: 100%; border: none;
+    }
+
+    .prompts-container {
+      flex: 1; overflow-y: auto; display: none;
+      padding: 2rem;
+      background: var(--bg);
+    }
+    .prompts-container.active { display: block; }
+
+    .prompts-content {
+      max-width: 800px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      font-size: 0.9rem;
+      color: var(--text);
+    }
+    .prompts-content h1, .prompts-content h2, .prompts-content h3 {
+      margin-bottom: 0.5rem; margin-top: 1.25rem;
+    }
+
+    .loading { color: var(--text-muted); padding: 1rem; font-style: italic; }
+
+    /* markdown-lite styling inside pre-wrap block */
+    .md h1 { font-size: 1.4rem; color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; margin-bottom: 1rem; }
+    .md h2 { font-size: 1.15rem; color: var(--accent3); margin-top: 1.5rem; margin-bottom: 0.5rem; }
+    .md h3 { font-size: 1rem; color: var(--text); margin-top: 1rem; margin-bottom: 0.3rem; }
+    .md p { margin-bottom: 0.75rem; }
+    .md ul, .md ol { margin-left: 1.5rem; margin-bottom: 0.75rem; }
+    .md li { margin-bottom: 0.3rem; }
+    .md code { background: var(--surface2); padding: 2px 5px; border-radius: 4px; font-family: monospace; font-size: 0.85em; }
+    .md pre { background: var(--surface2); padding: 1rem; border-radius: 8px; overflow-x: auto; margin: 0.75rem 0; }
+    .md pre code { background: none; padding: 0; }
+    .md hr { border: none; border-top: 1px solid var(--border); margin: 1.25rem 0; }
+    .md strong { color: var(--text); font-weight: 700; }
+
+    .no-prompts { color: var(--text-muted); font-style: italic; padding: 1rem; }
+
+    @media (max-width: 600px) {
+      .grid { grid-template-columns: 1fr; }
+      .menu-screen { padding: 1.5rem 1rem; }
+      .header { padding: 1rem; }
+      .breadcrumb { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-logo">F</div>
+  <div>
+    <div class="header-title">FITA — Course DEMO</div>
+    <div class="header-subtitle">Interactive App Showcase</div>
+  </div>
+  <nav class="breadcrumb" id="breadcrumb"></nav>
+</header>
+
+<main class="main">
+
+  <!-- ── Main Menu ── -->
+  <div class="screen active" id="screen-main">
+    <div class="menu-screen">
+      <div class="menu-title">Course Modules</div>
+      <p class="menu-desc">Select a module to explore the apps built in that section.</p>
+      <div class="grid">
+        <div class="card" onclick="goTo('module1')">
+          <div class="card-icon">⚙️</div>
+          <div class="card-name">Module 1</div>
+          <div class="card-desc">Foundations — utility apps covering typing, conversion, tasks, timers and reminders.</div>
+        </div>
+        <div class="card" onclick="goTo('module2')">
+          <div class="card-icon">😴</div>
+          <div class="card-name">Module 2</div>
+          <div class="card-desc">Data persistence — sleep tracking apps with localStorage and JSON storage.</div>
+        </div>
+        <div class="card" onclick="goTo('module3')">
+          <div class="card-icon">🎮</div>
+          <div class="card-name">Module 3</div>
+          <div class="card-desc">API integration — trivia games pulling live questions from external APIs.</div>
+        </div>
+        <div class="card" onclick="goTo('capstone')">
+          <div class="card-icon">🚀</div>
+          <div class="card-name">Capstone Project</div>
+          <div class="card-desc">Advanced apps — language learning with AI and a full-featured recipe vault.</div>
+        </div>
+        <div class="card" onclick="goTo('throughline')">
+          <div class="card-icon">📚</div>
+          <div class="card-name">Throughline Project</div>
+          <div class="card-desc">Flashcard study app evolved across multiple versions throughout the course.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Module 1 ── -->
+  <div class="screen" id="screen-module1">
+    <div class="menu-screen">
+      <button class="back-btn" onclick="goBack()">← Back</button>
+      <div class="menu-title">Module 1 — Foundations</div>
+      <p class="menu-desc">Utility apps built in the first module of the course.</p>
+      <div class="grid">
+        <div class="card" onclick="goTo('touch-typing')">
+          <div class="card-icon">⌨️</div>
+          <div class="card-name">Touch Typing</div>
+          <div class="card-desc">Practice touch typing with real-time feedback and WPM measurement.</div>
+          <div class="card-badge b">B — Builder</div>
+        </div>
+        <div class="card" onclick="openApp('Unit Converter', '/apps/unit-converter-M', 'unit-converter-M/index.html', null)">
+          <div class="card-icon">📏</div>
+          <div class="card-name">Unit Converter</div>
+          <div class="card-desc">Simple, accurate conversions for distance, weight, and volume.</div>
+          <div class="card-badge m">M — Model</div>
+        </div>
+        <div class="card" onclick="openApp('To-Do App', '/apps/to-do-app-M', 'to-do-app-M/index.html', null)">
+          <div class="card-icon">✅</div>
+          <div class="card-name">To-Do App</div>
+          <div class="card-desc">Clean task management with add, complete, and delete actions.</div>
+          <div class="card-badge m">M — Model</div>
+        </div>
+        <div class="card" onclick="goTo('pomodoro')">
+          <div class="card-icon">🍅</div>
+          <div class="card-name">Pomodoro Timer</div>
+          <div class="card-desc">Focus timer using the Pomodoro technique with work and break intervals.</div>
+          <div class="card-badge b">B — Builder</div>
+        </div>
+        <div class="card" onclick="openApp('Reminder App', '/apps/reminder-app-M', 'reminder-app-M/index.html', null)">
+          <div class="card-icon">🔔</div>
+          <div class="card-name">Reminder App</div>
+          <div class="card-desc">Create, track, and manage reminders with labels, dates and times.</div>
+          <div class="card-badge m">M — Model</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Touch Typing versions ── -->
+  <div class="screen" id="screen-touch-typing">
+    <div class="menu-screen">
+      <button class="back-btn" onclick="goBack()">← Back</button>
+      <div class="menu-title">Touch Typing — Versions</div>
+      <div class="versions-grid">
+        <div class="version-card" onclick="openApp('Touch Typing — V1', '/apps/touch-typing-B/v1', 'touch-typing-B/prompts-learner.md', null)">
+          <div class="version-label">Version 1</div>
+          <div class="version-name">MVP</div>
+          <div class="version-desc">Basic typing practice with WPM and accuracy results.</div>
+        </div>
+        <div class="version-card" onclick="openApp('Touch Typing — V2', '/apps/touch-typing-B/v2', 'touch-typing-B/prompts-learner.md', null)">
+          <div class="version-label">Version 2</div>
+          <div class="version-name">Enhanced</div>
+          <div class="version-desc">Improved UI, multiple passages and better feedback.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Pomodoro versions ── -->
+  <div class="screen" id="screen-pomodoro">
+    <div class="menu-screen">
+      <button class="back-btn" onclick="goBack()">← Back</button>
+      <div class="menu-title">Pomodoro Timer — Versions</div>
+      <div class="versions-grid">
+        <div class="version-card" onclick="openApp('Pomodoro Timer — V1', '/apps/pomodoro-timer-B/v1', 'pomodoro-timer-B/prompts-learner.md', null)">
+          <div class="version-label">Version 1</div>
+          <div class="version-name">MVP</div>
+          <div class="version-desc">Core 25/5 work-break cycle timer.</div>
+        </div>
+        <div class="version-card" onclick="openApp('Pomodoro Timer — V2', '/apps/pomodoro-timer-B/v2', 'pomodoro-timer-B/prompts-learner.md', null)">
+          <div class="version-label">Version 2</div>
+          <div class="version-name">Customizable</div>
+          <div class="version-desc">Adjustable session durations and break lengths.</div>
+        </div>
+        <div class="version-card" onclick="openApp('Pomodoro Timer — V3', '/apps/pomodoro-timer-B/v3', 'pomodoro-timer-B/prompts-learner.md', null)">
+          <div class="version-label">Version 3</div>
+          <div class="version-name">Polished</div>
+          <div class="version-desc">Visual enhancements, sound alerts and session history.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Module 2 ── -->
+  <div class="screen" id="screen-module2">
+    <div class="menu-screen">
+      <button class="back-btn" onclick="goBack()">← Back</button>
+      <div class="menu-title">Module 2 — Data Persistence</div>
+      <p class="menu-desc">Sleep tracking apps demonstrating different persistence strategies.</p>
+      <div class="grid">
+        <div class="card" onclick="goTo('sleep-tracker')">
+          <div class="card-icon">🌙</div>
+          <div class="card-name">Sleep Tracker</div>
+          <div class="card-desc">Log and visualize sleep patterns across multiple persistence approaches.</div>
+          <div class="card-badge b">B — Builder</div>
+        </div>
+        <div class="card" onclick="goTo('sleep-pattern')">
+          <div class="card-icon">📊</div>
+          <div class="card-name">Sleep Pattern App</div>
+          <div class="card-desc">Advanced sleep pattern visualization with analysis features.</div>
+          <div class="card-badge m">M — Model</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Sleep Tracker versions ── -->
+  <div class="screen" id="screen-sleep-tracker">
+    <div class="menu-screen">
+      <button class="back-btn" onclick="goBack()">← Back</button>
+      <div class="menu-title">Sleep Tracker — Versions</div>
+      <div class="versions-grid">
+        <div class="version-card" onclick="openApp('Sleep Tracker — V1', '/apps/sleep-tracker-B/v1', 'sleep-tracker-B/prompts-learner.md', null)">
+          <div class="version-label">Version 1</div>
+          <div class="version-name">MVP</div>
+          <div class="version-desc">Basic sleep logging with localStorage.</div>
+        </div>
+        <div class="version-card" onclick="openApp('Sleep Tracker — V2', '/apps/sleep-tracker-B/v2', 'sleep-tracker-B/prompts-learner.md', null)">
+          <div class="version-label">Version 2</div>
+          <div class="version-name">Adds Persistence</div>
+          <div class="version-desc">Server-side JSON file storage for sleep data.</div>
+        </div>
+        <div class="version-card" onclick="openApp('Sleep Tracker — V3', '/apps/sleep-tracker-B/v3', 'sleep-tracker-B/prompts-learner.md', null)">
+          <div class="version-label">Version 3</div>
+          <div class="version-name">Full Featured</div>
+          <div class="version-desc">Charts, analytics and improved UI.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Sleep Pattern App versions ── -->
+  <div class="screen" id="screen-sleep-pattern">
+    <div class="menu-screen">
+      <button class="back-btn" onclick="goBack()">← Back</button>
+      <div class="menu-title">Sleep Pattern App — Versions</div>
+      <div class="versions-grid">
+        <div class="version-card" onclick="openApp('Sleep Pattern — localStorage', '/apps/sleep-pattern-app-M/localStorage', 'sleep-pattern-app-M/promts-learner.md', null)">
+          <div class="version-label">Version 1</div>
+          <div class="version-name">localStorage</div>
+          <div class="version-desc">Stores sleep data in browser localStorage.</div>
+        </div>
+        <div class="version-card" onclick="openApp('Sleep Pattern — JSON Storage', '/apps/sleep-pattern-app-M/json-storage', 'sleep-pattern-app-M/promts-learner.md', null)">
+          <div class="version-label">Version 2</div>
+          <div class="version-name">JSON Storage</div>
+          <div class="version-desc">Server-side JSON file persistence.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Module 3 ── -->
+  <div class="screen" id="screen-module3">
+    <div class="menu-screen">
+      <button class="back-btn" onclick="goBack()">← Back</button>
+      <div class="menu-title">Module 3 — API Integration</div>
+      <p class="menu-desc">Trivia game apps demonstrating external API usage.</p>
+      <div class="grid">
+        <div class="card" onclick="goTo('trivia-b')">
+          <div class="card-icon">❓</div>
+          <div class="card-name">Trivia Game</div>
+          <div class="card-desc">Quiz app powered by the Open Trivia Database API.</div>
+          <div class="card-badge b">B — Builder</div>
+        </div>
+        <div class="card" onclick="openApp('Trivia Game Retro', '/apps/trivia-game-retro-M', 'trivia-game-retro-M/prompts-learner.md', null)">
+          <div class="card-icon">🕹️</div>
+          <div class="card-name">Trivia Game Retro</div>
+          <div class="card-desc">Retro-styled React + TypeScript version with animations and polished UX.</div>
+          <div class="card-badge m">M — Model (React)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Trivia B versions ── -->
+  <div class="screen" id="screen-trivia-b">
+    <div class="menu-screen">
+      <button class="back-btn" onclick="goBack()">← Back</button>
+      <div class="menu-title">Trivia Game — Versions</div>
+      <div class="versions-grid">
+        <div class="version-card" onclick="openApp('Trivia Game — V1', '/apps/trivia-game-B/v1', 'trivia-game-B/prompts-learner.md', null)">
+          <div class="version-label">Version 1</div>
+          <div class="version-name">MVP</div>
+          <div class="version-desc">Basic trivia quiz fetching questions from an API.</div>
+        </div>
+        <div class="version-card" onclick="openApp('Trivia Game — V2', '/apps/trivia-game-B/v2', 'trivia-game-B/prompts-learner.md', null)">
+          <div class="version-label">Version 2</div>
+          <div class="version-name">Polished</div>
+          <div class="version-desc">Score tracking, categories, and improved UX.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Capstone ── -->
+  <div class="screen" id="screen-capstone">
+    <div class="menu-screen">
+      <button class="back-btn" onclick="goBack()">← Back</button>
+      <div class="menu-title">Capstone Project</div>
+      <p class="menu-desc">Advanced projects combining all course skills.</p>
+      <div class="grid">
+        <div class="card" onclick="goTo('language-learning')">
+          <div class="card-icon">🌍</div>
+          <div class="card-name">Language Learning</div>
+          <div class="card-desc">Vocabulary builder with AI-powered word lookup and learning tracking.</div>
+        </div>
+        <div class="card" onclick="openApp('Recipe Vault', '/apps/recipe-vault', 'recipe-vault-cocobean-M/README.md', null)">
+          <div class="card-icon">🍳</div>
+          <div class="card-name">Recipe Vault</div>
+          <div class="card-desc">Recipe management with AI import, search and rich categorization.</div>
+          <div class="card-badge m">M — Model (React)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Language Learning versions ── -->
+  <div class="screen" id="screen-language-learning">
+    <div class="menu-screen">
+      <button class="back-btn" onclick="goBack()">← Back</button>
+      <div class="menu-title">Language Learning — Versions</div>
+      <div class="versions-grid">
+        <div class="version-card" onclick="openApp('Language Learning M — V1', '/apps/language-learning-app-M/v1', 'language-learning-app-M/promts-learner.md', null)">
+          <div class="version-label">Model — V1</div>
+          <div class="version-name">MVP with Persistence</div>
+          <div class="version-desc">Vocabulary notes with localStorage. No external API.</div>
+        </div>
+        <div class="version-card" onclick="openApp('Language Learning M — V2', '/apps/language-learning-app-M/v2', 'language-learning-app-M/promts-learner.md', null)">
+          <div class="version-label">Model — V2</div>
+          <div class="version-name">Adds LLM</div>
+          <div class="version-desc">AI-powered vocabulary lookup using OpenAI.</div>
+        </div>
+        <div class="version-card" onclick="openApp('Language Learning B — V1', '/apps/language-learning-B/v1', 'language-learning-B/prompts-learner.md', null)">
+          <div class="version-label">Builder — V1</div>
+          <div class="version-name">MVP</div>
+          <div class="version-desc">Initial build with basic vocabulary tracking.</div>
+        </div>
+        <div class="version-card" onclick="openApp('Language Learning B — V2', '/apps/language-learning-B/v2', 'language-learning-B/prompts-learner.md', null)">
+          <div class="version-label">Builder — V2</div>
+          <div class="version-name">Adds Persistence</div>
+          <div class="version-desc">Adds server-side word storage.</div>
+        </div>
+        <div class="version-card" onclick="openApp('Language Learning B — V3', '/apps/language-learning-B/v3', 'language-learning-B/prompts-learner.md', null)">
+          <div class="version-label">Builder — V3</div>
+          <div class="version-name">Adds LLM</div>
+          <div class="version-desc">AI vocabulary lookup integrated.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Throughline ── -->
+  <div class="screen" id="screen-throughline">
+    <div class="menu-screen">
+      <button class="back-btn" onclick="goBack()">← Back</button>
+      <div class="menu-title">Throughline Project — Flashcards</div>
+      <p class="menu-desc">A flashcard study app evolved throughout the entire course.</p>
+      <div class="grid">
+        <div class="card" onclick="goTo('flashcards-m')">
+          <div class="card-icon">📖</div>
+          <div class="card-name">Flashcards — Model</div>
+          <div class="card-desc">The reference implementation across all course versions.</div>
+          <div class="card-badge m">M — Model</div>
+        </div>
+        <div class="card" onclick="goTo('flashcards-b')">
+          <div class="card-icon">🃏</div>
+          <div class="card-name">Flashcards — Builder</div>
+          <div class="card-desc">The student-built version across all course versions.</div>
+          <div class="card-badge b">B — Builder</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Flashcards M versions ── -->
+  <div class="screen" id="screen-flashcards-m">
+    <div class="menu-screen">
+      <button class="back-btn" onclick="goBack()">← Back</button>
+      <div class="menu-title">Flashcards Model — Versions</div>
+      <div class="versions-grid">
+        <div class="version-card" onclick="openApp('Flashcards M — V1', '/apps/flashcards-app-M/v1', 'flashcards-app-M/promts-learner.md', null)">
+          <div class="version-label">Version 1</div>
+          <div class="version-name">MVP</div>
+          <div class="version-desc">Create, flip, and delete flashcards. In-memory only.</div>
+        </div>
+        <div class="version-card" onclick="openApp('Flashcards M — V2', '/apps/flashcards-app-M/v2', 'flashcards-app-M/promts-learner.md', null)">
+          <div class="version-label">Version 2</div>
+          <div class="version-name">Adds Persistence</div>
+          <div class="version-desc">Cards saved to localStorage across sessions.</div>
+        </div>
+        <div class="version-card" onclick="openApp('Flashcards M — V3 (LLM)', '/apps/flashcards-app-M/v3', 'flashcards-app-M/promts-learner.md', null)">
+          <div class="version-label">Version 3</div>
+          <div class="version-name">Adds AI Generation</div>
+          <div class="version-desc">AI-powered card generation using OpenAI.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Flashcards B versions ── -->
+  <div class="screen" id="screen-flashcards-b">
+    <div class="menu-screen">
+      <button class="back-btn" onclick="goBack()">← Back</button>
+      <div class="menu-title">Flashcards Builder — Versions</div>
+      <div class="versions-grid">
+        <div class="version-card" onclick="openApp('Flashcards B — V1', '/apps/flashcards-B/v1', 'flashcards-B/prompts-learner.md', null)">
+          <div class="version-label">Version 1</div>
+          <div class="version-name">MVP</div>
+          <div class="version-desc">Basic flashcard interface, in-memory only.</div>
+        </div>
+        <div class="version-card" onclick="openApp('Flashcards B — V2', '/apps/flashcards-B/v2', 'flashcards-B/prompts-learner.md', null)">
+          <div class="version-label">Version 2</div>
+          <div class="version-name">Adds Persistence</div>
+          <div class="version-desc">Cards persisted with localStorage.</div>
+        </div>
+        <div class="version-card" onclick="openApp('Flashcards B — V3', '/apps/flashcards-B/v3', 'flashcards-B/prompts-learner.md', null)">
+          <div class="version-label">Version 3</div>
+          <div class="version-name">Adds AI Generation</div>
+          <div class="version-desc">AI card generation via LLM integration.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── App Viewer ── -->
+  <div id="app-screen">
+    <div class="app-tabs">
+      <button class="tab-btn active" id="tab-app" onclick="switchTab('app')">App</button>
+      <button class="tab-btn" id="tab-prompts" onclick="switchTab('prompts')">Prompts</button>
+      <button class="back-btn" style="margin-bottom:0;margin-left:auto;border-bottom:none;" onclick="closeApp()">← Back</button>
+    </div>
+    <div class="app-frame-container active" id="frame-container">
+      <iframe id="app-iframe" src="" title="App Preview" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"></iframe>
+    </div>
+    <div class="prompts-container" id="prompts-container">
+      <div class="prompts-content md" id="prompts-content">
+        <p class="loading">Loading prompts…</p>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+  // ── State ──────────────────────────────────────────────────────────────────
+  const history = [];
+  let currentScreen = 'main';
+  let prevApp = null;
+
+  const screenMap = {
+    main: { label: 'Home' },
+    module1: { label: 'Module 1', parent: 'main' },
+    module2: { label: 'Module 2', parent: 'main' },
+    module3: { label: 'Module 3', parent: 'main' },
+    capstone: { label: 'Capstone', parent: 'main' },
+    throughline: { label: 'Throughline', parent: 'main' },
+    'touch-typing': { label: 'Touch Typing', parent: 'module1' },
+    pomodoro: { label: 'Pomodoro', parent: 'module1' },
+    'sleep-tracker': { label: 'Sleep Tracker', parent: 'module2' },
+    'sleep-pattern': { label: 'Sleep Pattern', parent: 'module2' },
+    'trivia-b': { label: 'Trivia Game', parent: 'module3' },
+    'language-learning': { label: 'Language Learning', parent: 'capstone' },
+    'flashcards-m': { label: 'Flashcards Model', parent: 'throughline' },
+    'flashcards-b': { label: 'Flashcards Builder', parent: 'throughline' },
+  };
+
+  // ── Navigation ─────────────────────────────────────────────────────────────
+  function goTo(id) {
+    history.push(currentScreen);
+    showScreen(id);
+  }
+
+  function goBack() {
+    const prev = history.pop();
+    if (prev) showScreen(prev);
+  }
+
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('app-screen').style.display = 'none';
+    const el = document.getElementById('screen-' + id);
+    if (el) {
+      el.classList.add('active');
+      currentScreen = id;
+      updateBreadcrumb(id);
+    }
+  }
+
+  function updateBreadcrumb(id) {
+    const bc = document.getElementById('breadcrumb');
+    const crumbs = [];
+    let cur = id;
+    while (cur) {
+      const info = screenMap[cur];
+      crumbs.unshift({ id: cur, label: info ? info.label : cur });
+      cur = info ? info.parent : null;
+    }
+    bc.innerHTML = crumbs.map((c, i) =>
+      i < crumbs.length - 1
+        ? `<a onclick="jumpTo('${c.id}')">${c.label}</a><span class="sep">›</span>`
+        : `<span class="current">${c.label}</span>`
+    ).join('');
+  }
+
+  function jumpTo(id) {
+    history.length = 0;
+    showScreen(id);
+  }
+
+  // ── App viewer ─────────────────────────────────────────────────────────────
+  function openApp(name, appPath, promptsFile, _unused) {
+    prevApp = { name, appPath, promptsFile };
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+
+    const appScreen = document.getElementById('app-screen');
+    appScreen.style.display = 'flex';
+
+    // Set iframe
+    document.getElementById('app-iframe').src = appPath;
+
+    // Switch to app tab by default
+    switchTab('app');
+
+    // Load prompts
+    if (promptsFile) {
+      document.getElementById('prompts-content').innerHTML = '<p class="loading">Loading prompts…</p>';
+      fetch('/api/prompts?file=' + encodeURIComponent(promptsFile))
+        .then(r => r.json())
+        .then(data => {
+          if (data.content) {
+            document.getElementById('prompts-content').innerHTML = renderMarkdown(data.content);
+          } else {
+            document.getElementById('prompts-content').innerHTML = '<p class="no-prompts">No prompts file found for this app.</p>';
+          }
+        })
+        .catch(() => {
+          document.getElementById('prompts-content').innerHTML = '<p class="no-prompts">Could not load prompts.</p>';
+        });
+    } else {
+      document.getElementById('prompts-content').innerHTML = '<p class="no-prompts">No prompts available for this app.</p>';
+    }
+
+    // Update breadcrumb
+    const bc = document.getElementById('breadcrumb');
+    bc.innerHTML = `<a onclick="closeApp()">← ${currentScreen === 'main' ? 'Home' : (screenMap[currentScreen]?.label || 'Back')}</a><span class="sep">›</span><span class="current">${name}</span>`;
+  }
+
+  function closeApp() {
+    document.getElementById('app-screen').style.display = 'none';
+    document.getElementById('app-iframe').src = '';
+    const el = document.getElementById('screen-' + currentScreen);
+    if (el) el.classList.add('active');
+    updateBreadcrumb(currentScreen);
+  }
+
+  function switchTab(tab) {
+    document.getElementById('tab-app').classList.toggle('active', tab === 'app');
+    document.getElementById('tab-prompts').classList.toggle('active', tab === 'prompts');
+    document.getElementById('frame-container').classList.toggle('active', tab === 'app');
+    document.getElementById('prompts-container').classList.toggle('active', tab === 'prompts');
+  }
+
+  // ── Markdown renderer (lite) ───────────────────────────────────────────────
+  function renderMarkdown(text) {
+    const lines = text.split('\n');
+    let html = '';
+    let inCode = false;
+
+    for (let line of lines) {
+      if (line.startsWith('```')) {
+        if (inCode) { html += '</code></pre>'; inCode = false; }
+        else { html += '<pre><code>'; inCode = true; }
+        continue;
+      }
+      if (inCode) { html += escHtml(line) + '\n'; continue; }
+
+      if (line.startsWith('### ')) html += `<h3>${escHtml(line.slice(4))}</h3>`;
+      else if (line.startsWith('## ')) html += `<h2>${escHtml(line.slice(3))}</h2>`;
+      else if (line.startsWith('# ')) html += `<h1>${escHtml(line.slice(2))}</h1>`;
+      else if (line.startsWith('---')) html += '<hr>';
+      else if (line.startsWith('- ')) html += `<ul><li>${inlineHtml(line.slice(2))}</li></ul>`;
+      else if (/^\d+\. /.test(line)) html += `<ol><li>${inlineHtml(line.replace(/^\d+\. /, ''))}</li></ol>`;
+      else if (line.trim() === '') html += '<p></p>';
+      else html += `<p>${inlineHtml(line)}</p>`;
+    }
+    if (inCode) html += '</code></pre>';
+
+    // Merge consecutive ul/ol items
+    html = html.replace(/<\/ul>\s*<ul>/g, '');
+    html = html.replace(/<\/ol>\s*<ol>/g, '');
+    return html;
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function inlineHtml(s) {
+    s = escHtml(s);
+    s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/\*(.+?)\*/g, '<em>$1</em>');
+    s = s.replace(/`(.+?)`/g, '<code>$1</code>');
+    return s;
+  }
+
+  // ── Init ───────────────────────────────────────────────────────────────────
+  updateBreadcrumb('main');
+</script>
+</body>
+</html>
