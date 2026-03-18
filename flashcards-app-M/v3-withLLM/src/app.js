@@ -409,6 +409,8 @@ function showNextCard() {
 
   const isEndOfCurrentRound = studyPosition === studyOrder.length - 1;
   if (isEndOfCurrentRound) {
+    // Check AI flow BEFORE resetting so the full round state is still visible.
+    void maybeRunAiFlow();
     // Start a fresh round from current unknown cards only.
     rebuildStudyOrder();
     resetRoundTracking();
@@ -430,7 +432,9 @@ function showNextCard() {
 
   showingFront = true;
   renderStudyCard();
-  void maybeRunAiFlow();
+  if (!isEndOfCurrentRound) {
+    void maybeRunAiFlow();
+  }
 }
 
 function render() {
@@ -781,7 +785,9 @@ async function maybeRunAiFlow() {
     return;
   }
 
-  const finishedRound = studyOrder.length > 0 && seenThisRound.size >= studyOrder.length;
+  const finishedRound =
+    studyOrder.length > 0 &&
+    studyOrder.every((id) => seenThisRound.has(id) || (cards.find((c) => c.id === id)?.known ?? false));
   if (!studyRoundInteractionStarted || !finishedRound || getKnownRate() < AI_PROMPT_THRESHOLD) {
     return;
   }
