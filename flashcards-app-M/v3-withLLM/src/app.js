@@ -51,7 +51,7 @@ let studyPosition = 0;
 let deferKnownOmissionForCurrent = false;
 
 let aiStack = loadAiStack();
-let seenThisRound = new Set();
+let visitedThisRound = new Set();
 let prefetchInFlight = false;
 let generationPromptInFlight = false;
 let modalResolve = null;
@@ -155,7 +155,7 @@ function saveAiStack() {
 }
 
 function resetRoundTracking() {
-  seenThisRound = new Set();
+  visitedThisRound = new Set();
   studyRoundInteractionStarted = false;
 }
 
@@ -238,6 +238,11 @@ function handleCardInputChange(event) {
   }
 
   card.known = knownToggle.checked;
+  if (card.known) {
+    visitedThisRound.add(card.id);
+  } else {
+    visitedThisRound.delete(card.id);
+  }
   deferKnownOmissionForCurrent = false;
 
   if (isStudyEditing) {
@@ -318,6 +323,11 @@ function saveInlineEdit(id, listItem) {
   card.question = trimmedQuestion;
   card.answer = trimmedAnswer;
   card.known = knownField.checked;
+  if (card.known) {
+    visitedThisRound.add(card.id);
+  } else {
+    visitedThisRound.delete(card.id);
+  }
   editingCardId = null;
   deferKnownOmissionForCurrent = false;
   rebuildStudyOrder();
@@ -363,8 +373,8 @@ function flipCurrentCard() {
 
   const currentCard = getCurrentStudyCard();
   if (isStudyTabActive() && currentCard && !showingFront) {
-    // A card is considered "gone through" only after seeing its back once.
-    seenThisRound.add(currentCard.id);
+    // A card is considered "gone through" after seeing its back once.
+    visitedThisRound.add(currentCard.id);
   }
 
   renderStudyCard();
@@ -701,6 +711,11 @@ function handleStudyKnownChange(event) {
   }
 
   card.known = isMarkingKnown;
+  if (isMarkingKnown) {
+    visitedThisRound.add(card.id);
+  } else {
+    visitedThisRound.delete(card.id);
+  }
   if (isStudyTabActive()) {
     studyRoundInteractionStarted = true;
   }
@@ -786,8 +801,9 @@ async function maybeRunAiFlow() {
     return;
   }
 
-  const finishedRound = studyOrder.length > 0 && seenThisRound.size >= studyOrder.length;
-  if (!studyRoundInteractionStarted || !finishedRound || getKnownRate() < AI_PROMPT_THRESHOLD) {
+  // Round is complete when every card has been either flipped (seen back) or marked as known.
+  const allAddressed = cards.length > 0 && cards.every((c) => c.known || visitedThisRound.has(c.id));
+  if (!studyRoundInteractionStarted || !allAddressed || getKnownRate() < AI_PROMPT_THRESHOLD) {
     return;
   }
 
