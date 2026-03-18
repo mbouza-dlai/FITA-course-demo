@@ -694,11 +694,6 @@ function handleStudyKnownChange(event) {
   }
 
   const isMarkingKnown = event.target.checked;
-  if (isMarkingKnown && getStudyEligibleCards().length === 1) {
-    // Prevent entering an unrecoverable all-known state from Study-only controls.
-    event.target.checked = false;
-    return;
-  }
 
   card.known = isMarkingKnown;
   if (isStudyTabActive()) {
