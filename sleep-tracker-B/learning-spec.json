@@ -1,0 +1,53 @@
+{
+  "app_name": "Sleep Tracker",
+  "module": 2,
+  "role": "demo",
+  "videos_covered": ["2.1", "2.2", "2.3"],
+  "primary_concept": "Data persistence — how and when to use localStorage, JSON files, and a full database to keep app data between sessions",
+  "secondary_concepts": [
+    "Choosing the right persistence layer for a given use case",
+    "Trade-offs between simplicity (localStorage) and power (database)",
+    "Structuring user-generated data for storage and retrieval",
+    "Phased feature development from MVP to more capable versions"
+  ],
+  "tech_constraints": {
+    "allowed_persistence": ["localStorage", "json-file", "supabase"],
+    "allowed_apis": ["none"],
+    "deployment_required": false,
+    "max_phases": 3
+  },
+  "mvp_features": [
+    "Log a sleep entry with a date, bedtime, and wake time",
+    "Calculate and display hours slept for each entry",
+    "Show a list of all past sleep entries",
+    "Persist entries using localStorage so data survives a page refresh",
+    "Delete an individual sleep entry"
+  ],
+  "stretch_features": [
+    "Migrate storage from localStorage to a JSON file so data is not browser-bound (Phase 2)",
+    "Display a weekly average hours-slept summary (Phase 2)",
+    "Migrate storage to a Supabase database to demonstrate full persistence (Phase 3)",
+    "Add a simple visual chart of sleep duration over the past 7 days (Phase 3)"
+  ],
+  "forbidden_features": [
+    "Any external API call (weather, health APIs, etc.) — APIs are not introduced until Module 3",
+    "LLM integration for sleep tips or analysis — LLM APIs are not introduced until Module 3",
+    "User authentication or multi-user accounts — requires database concepts beyond the module scope and adds security complexity not yet covered",
+    "Push notifications or reminders — requires platform APIs not covered in this course",
+    "Syncing data across devices without an explicit database phase — implies an API layer not yet introduced"
+  ],
+  "learner_outcome": "Learners will be able to add persistence to the Sleep Tracker app using localStorage, a JSON file, and a Supabase database, and explain when each storage option is the right choice for a given scenario.",
+  "instructor_talking_points": [
+    "Show the problem first: add a sleep entry, refresh the page, watch it disappear — make the learner feel the pain before introducing the fix",
+    "Contrast localStorage (single browser, no setup) with a JSON file (works anywhere the app runs) to make the trade-off concrete, not abstract",
+    "When introducing Supabase, emphasize that more power means more complexity and more breaking points — set expectations before the learner tries it",
+    "Use the Sleep Tracker's natural data shape (date, bedtime, wake time, duration) to show how structured data maps to rows in a database versus key-value pairs in localStorage"
+  ],
+  "scope_warnings": [
+    "Adding a 'smart bedtime recommendation' feature — this requires either an LLM API (Module 3) or statistical logic that balloons scope; redirect to simply displaying the average",
+    "Pulling in a health or fitness API (e.g., Apple Health, Google Fit) — external APIs are a Module 3 concept and these integrations also require OAuth, which is out of scope for the entire course",
+    "Building a user login so multiple people can track their sleep — user authentication requires database security configuration beyond what Module 2 covers; keep the app single-user",
+    "Adding a sleep-quality rating with emoji reactions and a searchable history — each add-on looks small but together they push Phase 1 past a single coding session; hold cosmetic and search features for Phase 2",
+    "Visualizing sleep data with an interactive chart library — charting is tempting because the data fits well, but integrating a third-party JS library introduces dependency management complexity not yet covered"
+  ]
+}

@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Touch Typing Practice</title>
+  <style>
+    /* ── CSS Custom Properties ── */
+    :root {
+      --color-bg: #ffffff;
+      --color-text: #1a1a1a;
+      --color-muted: #888888;
+      --color-correct: #22a05a;
+      --color-wrong: #e63946;
+      --color-cursor-bg: #d0e8ff;
+      --color-cursor-border: #2277cc;
+      --color-btn-bg: #1a1a1a;
+      --color-btn-text: #ffffff;
+      --color-btn-hover: #333333;
+      --color-card-bg: #f8f8f8;
+      --color-card-border: #e0e0e0;
+      --color-card-hover: #f0f0f0;
+      --color-filter-active: #1a1a1a;
+      --color-filter-inactive-bg: #f0f0f0;
+      --color-filter-inactive-text: #555555;
+      --font-main: 'Georgia', serif;
+      --font-ui: system-ui, -apple-system, sans-serif;
+      --spacing-page: 48px;
+      --passage-size: 1.5rem;
+      --passage-line-height: 2.2rem;
+    }
+
+    /* ── Reset & Base ── */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--color-bg);
+      color: var(--color-text);
+      font-family: var(--font-ui);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--spacing-page);
+    }
+
+    /* ── Main Container ── */
+    #app {
+      width: 100%;
+      max-width: 720px;
+    }
+
+    /* ═══════════════════════════════════════
+       SELECTION SCREEN
+    ═══════════════════════════════════════ */
+    #selection-screen {
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+
+    #selection-screen h1 {
+      font-family: var(--font-main);
+      font-size: 1.75rem;
+      font-weight: normal;
+      color: var(--color-text);
+    }
+
+    /* Difficulty filter row */
+    .difficulty-filters {
+      display: flex;
+      gap: 10px;
+    }
+
+    .filter-btn {
+      background: var(--color-filter-inactive-bg);
+      color: var(--color-filter-inactive-text);
+      border: none;
+      border-radius: 20px;
+      padding: 8px 20px;
+      font-size: 0.875rem;
+      font-family: var(--font-ui);
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .filter-btn:hover {
+      background: #e0e0e0;
+    }
+
+    .filter-btn.active {
+      background: var(--color-filter-active);
+      color: #ffffff;
+    }
+
+    /* Passage cards list */
+    #passage-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* Individual passage card */
+    .passage-card {
+      background: var(--color-card-bg);
+      border: 1px solid var(--color-card-border);
+      border-radius: 10px;
+      padding: 18px 22px;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+      text-align: left;
+      width: 100%;
+      font-family: var(--font-ui);
+    }
+
+    .passage-card:hover {
+      background: var(--color-card-hover);
+      border-color: #c0c0c0;
+    }
+
+    .passage-card-preview {
+      font-size: 1rem;
+      color: var(--color-text);
+      line-height: 1.5;
+    }
+
+    .passage-card-meta {
+      margin-top: 6px;
+      font-size: 0.8rem;
+      color: var(--color-muted);
+      display: flex;
+      gap: 12px;
+    }
+
+    .difficulty-badge {
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 600;
+    }
+
+    /* ═══════════════════════════════════════
+       TYPING SCREEN
+    ═══════════════════════════════════════ */
+    #typing-screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 32px;
+    }
+
+    /* Hidden input that captures keystrokes */
+    #hidden-input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+      width: 1px;
+      height: 1px;
+    }
+
+    /* Back link */
+    #back-link {
+      align-self: flex-start;
+      font-size: 0.875rem;
+      color: var(--color-muted);
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 0;
+      font-family: var(--font-ui);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    #back-link:hover {
+      color: var(--color-text);
+      background: none;
+    }
+
+    /* The passage display */
+    #passage {
+      font-family: var(--font-main);
+      font-size: var(--passage-size);
+      line-height: var(--passage-line-height);
+      letter-spacing: 0.02em;
+      text-align: left;
+      width: 100%;
+      cursor: text;
+      user-select: none;
+    }
+
+    /* Individual character spans */
+    #passage span {
+      display: inline;
+      transition: color 0.05s;
+    }
+
+    /* Correct character */
+    #passage span.correct {
+      color: var(--color-correct);
+    }
+
+    /* Wrong character */
+    #passage span.wrong {
+      color: var(--color-wrong);
+    }
+
+    /* Current cursor position — blinking underline highlight */
+    #passage span.cursor {
+      background: var(--color-cursor-bg);
+      border-bottom: 3px solid var(--color-cursor-border);
+      animation: blink 1s step-start infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { background: var(--color-cursor-bg); }
+      50%       { background: #b3d4f7; }
+    }
+
+    /* Hint text shown below passage before typing starts */
+    #hint {
+      font-size: 0.875rem;
+      color: var(--color-muted);
+    }
+
+    /* Live WPM counter shown while typing */
+    #live-wpm {
+      font-size: 0.95rem;
+      color: var(--color-muted);
+      min-height: 1.4em; /* Reserve space so layout doesn't shift */
+    }
+
+    #live-wpm span {
+      font-weight: 700;
+      color: var(--color-text);
+    }
+
+    /* ═══════════════════════════════════════
+       RESULTS SCREEN
+    ═══════════════════════════════════════ */
+    #results-screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 32px;
+      text-align: center;
+    }
+
+    #results-screen.visible {
+      display: flex;
+    }
+
+    .results-stats {
+      display: flex;
+      gap: 64px;
+      justify-content: center;
+    }
+
+    .stat {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .stat-value {
+      font-size: 3.5rem;
+      font-weight: 700;
+      line-height: 1;
+      color: var(--color-text);
+    }
+
+    .stat-label {
+      font-size: 0.875rem;
+      color: var(--color-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    /* ── Shared Button Style ── */
+    button {
+      background: var(--color-btn-bg);
+      color: var(--color-btn-text);
+      border: none;
+      border-radius: 8px;
+      padding: 14px 36px;
+      font-size: 1rem;
+      font-family: var(--font-ui);
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    button:hover {
+      background: var(--color-btn-hover);
+    }
+
+    /* ═══════════════════════════════════════
+       CONFETTI CANVAS
+    ═══════════════════════════════════════ */
+    #confetti-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none; /* Clicks pass through to the UI below */
+      z-index: 100;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="confetti-canvas"></canvas>
+
+<div id="app">
+
+  <!-- ── Selection Screen ── -->
+  <div id="selection-screen">
+    <h1>Touch Typing Practice</h1>
+
+    <!-- Difficulty filter buttons -->
+    <div class="difficulty-filters" role="group" aria-label="Filter by difficulty">
+      <button class="filter-btn active" data-difficulty="all">All</button>
+      <button class="filter-btn" data-difficulty="short">Short</button>
+      <button class="filter-btn" data-difficulty="medium">Medium</button>
+      <button class="filter-btn" data-difficulty="long">Long</button>
+    </div>
+
+    <!-- Passage cards injected here by JS -->
+    <div id="passage-list" role="list"></div>
+  </div>
+
+  <!-- ── Typing Screen ── -->
+  <div id="typing-screen">
+    <button id="back-link">← Choose a different passage</button>
+    <div id="passage" role="region" aria-label="Typing passage"></div>
+    <p id="hint">Start typing to begin</p>
+    <p id="live-wpm"></p>
+    <!-- Hidden input to capture keystrokes on mobile / accessibility -->
+    <input id="hidden-input" type="text" autocomplete="off" autocorrect="off"
+           autocapitalize="off" spellcheck="false" aria-hidden="true" />
+  </div>
+
+  <!-- ── Results Screen ── -->
+  <div id="results-screen" role="region" aria-label="Results">
+    <div class="results-stats">
+      <div class="stat">
+        <span class="stat-value" id="wpm-value">0</span>
+        <span class="stat-label">Words per Minute</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value" id="accuracy-value">0%</span>
+        <span class="stat-label">Accuracy</span>
+      </div>
+    </div>
+    <button id="try-again-btn">Try Again</button>
+  </div>
+
+</div>
+
+<script>
+  // ═══════════════════════════════════════
+  // PASSAGES DATA
+  // Each passage has an id, text, difficulty, and word count.
+  // Difficulty assignment is based on character length:
+  //   short  < 100 chars
+  //   medium 100–200 chars
+  //   long   > 200 chars
+  // ═══════════════════════════════════════
+  const PASSAGES = [
+    {
+      id: 1,
+      text: "The quick brown fox jumps over the lazy dog. Practice makes perfect, so keep your fingers on the home row and your eyes on the screen.",
+      difficulty: "medium"
+      // 134 chars — medium
+    },
+    {
+      id: 2,
+      text: "A good typist does not look at the keyboard. With enough repetition, your fingers learn where every key lives, and your brain stops thinking about the mechanics.",
+      difficulty: "medium"
+      // 160 chars — medium
+    },
+    {
+      id: 3,
+      text: "Speed comes after accuracy. Focus first on pressing the right key every time. The pace will follow naturally as your muscle memory develops.",
+      difficulty: "medium"
+      // 139 chars — medium
+    },
+    {
+      id: 4,
+      text: "Every expert was once a beginner. The only difference between a slow typist and a fast one is the number of hours spent with fingers on keys.",
+      difficulty: "medium"
+      // 141 chars — medium
+    },
+    // Added a short passage and a long passage so all three difficulty
+    // levels have at least one option (Prompt 2.3 requirement).
+    {
+      id: 5,
+      text: "Type with purpose. Every keystroke counts.",
+      difficulty: "short"
+      // 42 chars — short
+    },
+    {
+      id: 6,
+      text: "Touch typing is a skill that pays dividends for life. Unlike most physical skills, it does not fade with age. The more you practice, the more natural it becomes, until you are no longer typing words but simply thinking them onto the page.",
+      difficulty: "long"
+      // 237 chars — long
+    }
+  ];
+
+  // ── Preview helper: first 7 words of a passage ──
+  function getPreview(text) {
+    return text.split(' ').slice(0, 7).join(' ') + '…';
+  }
+
+  // ── State ──
+  let currentPassage  = null;   // the passage object currently being typed
+  let startTime       = null;   // timestamp of first keystroke (ms)
+  let currentIndex    = 0;      // which character the user is about to type
+  let correctCount    = 0;      // how many characters were typed correctly
+  let liveWpmInterval = null;   // setInterval handle for the live WPM counter
+  let activeFilter    = 'all';  // currently selected difficulty filter
+
+  // ── DOM references ──
+  const selectionScreen = document.getElementById('selection-screen');
+  const typingScreen    = document.getElementById('typing-screen');
+  const resultsScreen   = document.getElementById('results-screen');
+  const passageEl       = document.getElementById('passage');
+  const wpmValueEl      = document.getElementById('wpm-value');
+  const accuracyValueEl = document.getElementById('accuracy-value');
+  const tryAgainBtn     = document.getElementById('try-again-btn');
+  const hintEl          = document.getElementById('hint');
+  const hiddenInput     = document.getElementById('hidden-input');
+  const passageList     = document.getElementById('passage-list');
+  const backLink        = document.getElementById('back-link');
+  const liveWpmEl       = document.getElementById('live-wpm');
+  const filterBtns      = document.querySelectorAll('.filter-btn');
+
+  // ═══════════════════════════════════════
+  // SELECTION SCREEN
+  // ═══════════════════════════════════════
+
+  // Render the passage cards, filtered by difficulty
+  function renderPassageList() {
+    passageList.innerHTML = '';
+
+    const filtered = activeFilter === 'all'
+      ? PASSAGES
+      : PASSAGES.filter(p => p.difficulty === activeFilter);
+
+    filtered.forEach(passage => {
+      const card = document.createElement('button');
+      card.className = 'passage-card';
+      card.setAttribute('role', 'listitem');
+      card.innerHTML = `
+        <div class="passage-card-preview">${getPreview(passage.text)}</div>
+        <div class="passage-card-meta">
+          <span class="difficulty-badge">${passage.difficulty}</span>
+          <span>${passage.text.length} characters</span>
+        </div>
+      `;
+      card.addEventListener('click', () => startPassage(passage));
+      passageList.appendChild(card);
+    });
+  }
+
+  // Handle difficulty filter button clicks
+  filterBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      activeFilter = btn.dataset.difficulty;
+      // Update active class
+      filterBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderPassageList();
+    });
+  });
+
+  // ═══════════════════════════════════════
+  // NAVIGATION
+  // ═══════════════════════════════════════
+
+  // Move from selection screen to typing screen with chosen passage
+  function startPassage(passage) {
+    currentPassage = passage;
+    // Reset all typing state before loading the new passage (fixes Prompt 2.5 bug)
+    resetTypingState();
+
+    selectionScreen.style.display = 'none';
+    resultsScreen.classList.remove('visible');
+    resultsScreen.style.display = '';
+    typingScreen.style.display  = 'flex';
+
+    hiddenInput.focus();
+  }
+
+  // Return to the selection screen
+  function goToSelection() {
+    // Stop any live WPM interval that might be running
+    clearLiveWpmInterval();
+
+    typingScreen.style.display   = 'none';
+    resultsScreen.classList.remove('visible');
+    resultsScreen.style.display  = '';
+    selectionScreen.style.display = 'flex';
+  }
+
+  // ═══════════════════════════════════════
+  // TYPING ENGINE
+  // ═══════════════════════════════════════
+
+  // Build passage spans from the current passage text
+  function buildPassage() {
+    passageEl.innerHTML = '';
+    const text = currentPassage.text;
+    for (let i = 0; i < text.length; i++) {
+      const span = document.createElement('span');
+      // Non-breaking space keeps whitespace visible
+      span.textContent = text[i] === ' ' ? '\u00A0' : text[i];
+      span.dataset.index = i;
+      passageEl.appendChild(span);
+    }
+    updateCursor();
+  }
+
+  // Mark the current character with the cursor class
+  function updateCursor() {
+    const spans = passageEl.querySelectorAll('span');
+    spans.forEach(s => s.classList.remove('cursor'));
+    if (currentIndex < currentPassage.text.length) {
+      spans[currentIndex].classList.add('cursor');
+    }
+  }
+
+  // Reset all typing state variables and UI (without changing which screen is visible)
+  function resetTypingState() {
+    // Clear the live WPM interval first to avoid stale intervals
+    clearLiveWpmInterval();
+
+    startTime    = null;
+    currentIndex = 0;
+    correctCount = 0;
+
+    // Reset live WPM display
+    liveWpmEl.textContent = '';
+
+    // Reset hint visibility
+    hintEl.style.visibility = 'visible';
+
+    // Rebuild spans
+    buildPassage();
+  }
+
+  // Handle a single keystroke
+  function handleKey(key) {
+    if (key.length !== 1) return;
+    if (currentIndex >= currentPassage.text.length) return;
+
+    // Start timer on first keystroke
+    if (currentIndex === 0 && startTime === null) {
+      startTime = Date.now();
+      hintEl.style.visibility = 'hidden';
+      startLiveWpmInterval();  // begin updating the live counter
+    }
+
+    const expected = currentPassage.text[currentIndex];
+    const spans = passageEl.querySelectorAll('span');
+    const span = spans[currentIndex];
+
+    if (key === expected) {
+      span.classList.add('correct');
+      correctCount++;
+    } else {
+      span.classList.add('wrong');
+    }
+
+    span.classList.remove('cursor');
+    currentIndex++;
+
+    if (currentIndex < currentPassage.text.length) {
+      updateCursor();
+    } else {
+      // Typing complete
+      clearLiveWpmInterval();
+      showResults();
+    }
+  }
+
+  // ═══════════════════════════════════════
+  // LIVE WPM COUNTER
+  // ═══════════════════════════════════════
+
+  function startLiveWpmInterval() {
+    // Update immediately, then every second
+    updateLiveWpm();
+    liveWpmInterval = setInterval(updateLiveWpm, 1000);
+  }
+
+  function clearLiveWpmInterval() {
+    if (liveWpmInterval !== null) {
+      clearInterval(liveWpmInterval);
+      liveWpmInterval = null;
+    }
+  }
+
+  function updateLiveWpm() {
+    if (startTime === null) return;
+    const elapsedMinutes = (Date.now() - startTime) / 1000 / 60;
+    if (elapsedMinutes <= 0) return;
+    const wpm = Math.round((currentIndex / 5) / elapsedMinutes);
+    liveWpmEl.innerHTML = 'Current speed: <span>' + wpm + ' WPM</span>';
+  }
+
+  // ═══════════════════════════════════════
+  // RESULTS SCREEN
+  // ═══════════════════════════════════════
+
+  function showResults() {
+    const endTime = Date.now();
+    const elapsedMinutes = (endTime - startTime) / 1000 / 60;
+
+    // WPM: total chars / 5 / minutes
+    const wpm = Math.round((currentPassage.text.length / 5) / elapsedMinutes);
+
+    // Accuracy: correctly typed chars / total chars
+    const accuracy = Math.round((correctCount / currentPassage.text.length) * 100);
+
+    wpmValueEl.textContent      = wpm;
+    accuracyValueEl.textContent = accuracy + '%';
+
+    // Swap screens
+    typingScreen.style.display  = 'none';
+    resultsScreen.style.display = 'flex';
+    resultsScreen.classList.add('visible');
+
+    // Trigger confetti celebration
+    launchConfetti();
+  }
+
+  // ═══════════════════════════════════════
+  // TRY AGAIN
+  // ═══════════════════════════════════════
+
+  tryAgainBtn.addEventListener('click', function() {
+    // Reset typing state (clears interval, colors, timer)
+    resetTypingState();
+
+    // Swap back to typing screen
+    resultsScreen.classList.remove('visible');
+    resultsScreen.style.display = '';
+    typingScreen.style.display  = 'flex';
+
+    hiddenInput.value = '';
+    hiddenInput.focus();
+  });
+
+  // ═══════════════════════════════════════
+  // BACK LINK
+  // ═══════════════════════════════════════
+
+  backLink.addEventListener('click', goToSelection);
+
+  // ═══════════════════════════════════════
+  // KEYBOARD HANDLING
+  // ═══════════════════════════════════════
+
+  document.addEventListener('keydown', function(e) {
+    // Only handle when typing screen is visible
+    if (typingScreen.style.display !== 'flex') return;
+    if (e.key === ' ') e.preventDefault();
+    handleKey(e.key);
+  });
+
+  passageEl.addEventListener('click', function() {
+    hiddenInput.focus();
+  });
+
+  // ═══════════════════════════════════════
+  // CONFETTI ANIMATION
+  // ═══════════════════════════════════════
+  // A simple canvas-based confetti burst. Plays once and stops.
+
+  const confettiCanvas = document.getElementById('confetti-canvas');
+  const ctx = confettiCanvas.getContext('2d');
+  let confettiParticles = [];
+  let confettiAnimId = null;
+
+  const CONFETTI_COLORS = [
+    '#e63946', '#f4a261', '#2a9d8f', '#457b9d',
+    '#a8dadc', '#f1c40f', '#9b59b6', '#22a05a'
+  ];
+
+  // Resize canvas to fill viewport
+  function resizeConfettiCanvas() {
+    confettiCanvas.width  = window.innerWidth;
+    confettiCanvas.height = window.innerHeight;
+  }
+  resizeConfettiCanvas();
+  window.addEventListener('resize', resizeConfettiCanvas);
+
+  // Create a batch of confetti particles falling from the top
+  function createConfettiParticles(count) {
+    confettiParticles = [];
+    for (let i = 0; i < count; i++) {
+      confettiParticles.push({
+        x:       Math.random() * confettiCanvas.width,
+        y:       -10 - Math.random() * 80,          // start above viewport
+        w:       6 + Math.random() * 8,              // width of the piece
+        h:       3 + Math.random() * 4,              // height of the piece
+        color:   CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
+        angle:   Math.random() * Math.PI * 2,
+        spin:    (Math.random() - 0.5) * 0.2,        // rotation speed
+        speedX:  (Math.random() - 0.5) * 3,
+        speedY:  3 + Math.random() * 4,              // fall speed
+        opacity: 1
+      });
+    }
+  }
+
+  function animateConfetti() {
+    ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+
+    let anyAlive = false;
+
+    confettiParticles.forEach(p => {
+      // Update position
+      p.x     += p.speedX;
+      p.y     += p.speedY;
+      p.angle += p.spin;
+
+      // Fade out once past 80% of canvas height
+      if (p.y > confettiCanvas.height * 0.8) {
+        p.opacity = Math.max(0, p.opacity - 0.04);
+      }
+
+      if (p.opacity > 0) {
+        anyAlive = true;
+        ctx.save();
+        ctx.globalAlpha = p.opacity;
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.angle);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        ctx.restore();
+      }
+    });
+
+    if (anyAlive) {
+      confettiAnimId = requestAnimationFrame(animateConfetti);
+    } else {
+      // All particles gone — clear canvas and stop loop
+      ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+      confettiAnimId = null;
+    }
+  }
+
+  function launchConfetti() {
+    // Cancel any previous animation that might still be running
+    if (confettiAnimId !== null) {
+      cancelAnimationFrame(confettiAnimId);
+      confettiAnimId = null;
+    }
+    ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+    createConfettiParticles(120);
+    confettiAnimId = requestAnimationFrame(animateConfetti);
+  }
+
+  // ═══════════════════════════════════════
+  // INITIALIZATION
+  // ═══════════════════════════════════════
+
+  // Start on the selection screen
+  renderPassageList();
+</script>
+</body>
+</html>

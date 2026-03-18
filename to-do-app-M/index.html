@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>To-Do App</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header>
+        <h1>My Tasks</h1>
+        <p class="subtitle">Create, update, and track what needs to get done.</p>
+      </header>
+
+      <section class="task-card" aria-label="Add a task">
+        <h2>Add Task</h2>
+        <p id="listMessage" class="list-message" role="status" aria-live="polite"></p>
+
+        <form id="taskForm" class="task-form" novalidate>
+          <div class="field">
+            <label for="taskListSelect">List / Project <span aria-hidden="true">*</span></label>
+            <select id="taskListSelect" name="taskListSelect" required></select>
+          </div>
+
+          <div class="field">
+            <label for="taskTitle">Title <span aria-hidden="true">*</span></label>
+            <input id="taskTitle" name="taskTitle" type="text" required maxlength="120" />
+          </div>
+
+          <div class="field">
+            <label for="taskDueDate">Due Date <span aria-hidden="true">*</span></label>
+            <input id="taskDueDate" name="taskDueDate" type="date" required />
+          </div>
+
+          <div class="field">
+            <label for="taskDescription">Description (optional)</label>
+            <textarea id="taskDescription" name="taskDescription" rows="3" maxlength="500"></textarea>
+          </div>
+
+          <p id="formMessage" class="form-message" role="status" aria-live="polite"></p>
+
+          <button type="submit">Add Task</button>
+        </form>
+      </section>
+
+      <section class="task-card" aria-label="Task list">
+        <div class="tasks-header">
+          <h2>Tasks</h2>
+          <div class="tasks-meta">
+            <details class="filter-panel">
+              <summary class="sort-label">Filter lists</summary>
+              <div id="listFilters" class="list-filters"></div>
+            </details>
+            <label class="sort-label" for="sortTasks">Sort by</label>
+            <select id="sortTasks" class="sort-select" aria-label="Sort tasks">
+              <option value="due-asc">Due date (earliest first)</option>
+              <option value="due-desc">Due date (latest first)</option>
+              <option value="created-desc">Recently added</option>
+              <option value="created-asc">Oldest first</option>
+            </select>
+            <p id="taskCount" class="task-count">0 tasks</p>
+          </div>
+        </div>
+        <ul id="taskList" class="task-list"></ul>
+      </section>
+    </main>
+
+    <template id="taskTemplate">
+      <li class="task-item">
+        <div class="task-content">
+          <p class="task-title"></p>
+          <p class="task-list-badge"></p>
+          <p class="task-due-date"></p>
+          <p class="task-description"></p>
+
+          <form class="edit-form" hidden>
+            <div class="field">
+              <label>Title <span aria-hidden="true">*</span></label>
+              <input type="text" class="edit-title" required maxlength="120" />
+            </div>
+
+            <div class="field">
+              <label>Due Date <span aria-hidden="true">*</span></label>
+              <input type="date" class="edit-due-date" required />
+            </div>
+
+            <div class="field">
+              <label>Description (optional)</label>
+              <textarea class="edit-description" rows="3" maxlength="500"></textarea>
+            </div>
+
+            <p class="edit-message" role="status" aria-live="polite"></p>
+
+            <div class="edit-actions">
+              <button type="submit" class="secondary save-edit">Save</button>
+              <button type="button" class="secondary cancel-edit">Cancel</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="task-actions">
+          <button type="button" class="secondary edit-task">Edit</button>
+          <div class="move-task-group">
+            <select class="move-task-select" aria-label="Move task to another list"></select>
+            <button type="button" class="secondary move-task">Move</button>
+          </div>
+          <button type="button" class="danger delete-task">Delete</button>
+        </div>
+
+        <label class="check-wrapper">
+          <input type="checkbox" class="task-toggle" aria-label="Mark task complete" />
+          <span class="check-text">Done</span>
+        </label>
+      </li>
+    </template>
+
+    <script defer src="./src/app.js"></script>
+  </body>
+</html>

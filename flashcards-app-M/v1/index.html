@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flashcards App</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app">
+    <header class="app-header">
+      <h1>Flashcards</h1>
+      <p>Create cards and review them one by one.</p>
+    </header>
+
+    <nav class="tab-nav" aria-label="Flashcard sections">
+      <div class="tab-list" role="tablist" aria-orientation="horizontal">
+        <button type="button" id="tab-create" class="tab-btn" role="tab" aria-selected="true" aria-controls="panel-create" data-tab-target="panel-create">Create</button>
+        <button type="button" id="tab-study" class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-study" data-tab-target="panel-study" tabindex="-1">Study</button>
+        <button type="button" id="tab-manage" class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-manage" data-tab-target="panel-manage" tabindex="-1">Manage</button>
+      </div>
+    </nav>
+
+    <section id="panel-create" class="panel tab-panel form-panel active" role="tabpanel" aria-labelledby="tab-create">
+      <h2 id="form-title">Create New Flashcard</h2>
+      <form id="flashcard-form">
+        <label for="question-input">Front (Question / Prompt)</label>
+        <textarea id="question-input" name="question" rows="3" required placeholder="Enter the front text..."></textarea>
+
+        <label for="answer-input">Back (Answer)</label>
+        <textarea id="answer-input" name="answer" rows="3" required placeholder="Enter the back text..."></textarea>
+
+        <button type="submit">Add Flashcard</button>
+      </form>
+    </section>
+
+    <section id="panel-study" class="panel tab-panel study-panel" role="tabpanel" aria-labelledby="tab-study" hidden>
+      <div class="study-header">
+        <h2 id="study-title">Study Mode</h2>
+        <p id="card-position" class="muted">No cards yet</p>
+      </div>
+
+      <article id="study-card" class="study-card empty" tabindex="0" aria-live="polite">
+        <div class="card-inner" aria-hidden="true">
+          <div class="card-face card-front">
+            <p id="study-front-text" class="card-side"></p>
+          </div>
+          <div class="card-face card-back">
+            <p id="study-back-text" class="card-side"></p>
+          </div>
+        </div>
+        <p class="empty-state">Add a flashcard to begin studying.</p>
+        <p id="flip-hint" class="flip-hint" aria-hidden="true">Tip: click the card or press Flip</p>
+      </article>
+
+      <div class="study-actions">
+        <button type="button" id="prev-btn" class="secondary">Previous</button>
+        <button type="button" id="flip-btn">Flip</button>
+        <button type="button" id="next-btn" class="secondary">Next</button>
+      </div>
+    </section>
+
+    <section id="panel-manage" class="panel tab-panel list-panel" role="tabpanel" aria-labelledby="tab-manage" hidden>
+      <div class="list-header">
+        <h2 id="list-title">Manage Flashcards</h2>
+        <p id="total-cards" class="muted">0 cards</p>
+      </div>
+
+      <ul id="flashcard-list" class="flashcard-list" aria-live="polite"></ul>
+    </section>
+  </main>
+
+  <template id="flashcard-item-template">
+    <li class="flashcard-item" data-id="">
+      <div class="card-content">
+        <div class="card-view">
+          <p><strong>Front:</strong> <span data-field="question"></span></p>
+          <p><strong>Back:</strong> <span data-field="answer"></span></p>
+        </div>
+
+        <div class="card-edit" hidden>
+          <label>
+            Front
+            <textarea rows="2" data-edit-field="question"></textarea>
+          </label>
+          <label>
+            Back
+            <textarea rows="2" data-edit-field="answer"></textarea>
+          </label>
+          <p class="edit-error" data-edit-error hidden>Both front and back text are required.</p>
+        </div>
+      </div>
+      <div class="card-actions">
+        <button type="button" data-action="edit" class="secondary">Edit</button>
+        <button type="button" data-action="save">Save</button>
+        <button type="button" data-action="cancel" class="secondary">Cancel</button>
+        <button type="button" data-action="delete" class="danger">Delete</button>
+      </div>
+    </li>
+  </template>
+
+  <script src="src/app.js"></script>
+</body>
+</html>

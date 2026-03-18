@@ -1,0 +1,1646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>25:00 - Work | Pomodoro Timer</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --work-bg: #e74c3c;
+    --work-bg-light: #fdedec;
+    --short-bg: #27ae60;
+    --short-bg-light: #eafaf1;
+    --long-bg: #2980b9;
+    --long-bg-light: #ebf5fb;
+    --current-bg: var(--work-bg);
+    --current-bg-light: var(--work-bg-light);
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    min-height: 100vh;
+    background-color: var(--current-bg-light);
+    transition: background-color 0.5s ease;
+    color: #2c3e50;
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .app {
+    max-width: 500px;
+    width: 100%;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 1.4rem;
+    margin-bottom: 20px;
+    color: #34495e;
+  }
+
+  /* Focus mode toggle in header */
+  .header-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    position: relative;
+  }
+
+  .header-row h1 {
+    margin-bottom: 0;
+  }
+
+  .focus-mode-toggle {
+    background: none;
+    border: 2px solid #bdc3c7;
+    border-radius: 20px;
+    padding: 6px 14px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #555;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+  }
+
+  .focus-mode-toggle:hover {
+    border-color: #888;
+  }
+
+  .focus-mode-toggle.active {
+    background-color: #2c3e50;
+    color: white;
+    border-color: #2c3e50;
+  }
+
+  /* Mode label */
+  .mode-label {
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--current-bg);
+    margin-bottom: 8px;
+    transition: color 0.5s ease;
+  }
+
+  /* Session indicator */
+  .session-indicator {
+    text-align: center;
+    font-size: 0.9rem;
+    color: #7f8c8d;
+    margin-bottom: 16px;
+  }
+
+  /* Templates section */
+  .templates-section {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .template-btn {
+    padding: 8px 16px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #555;
+    transition: all 0.2s;
+  }
+
+  .template-btn:hover {
+    border-color: #999;
+  }
+
+  .template-btn.active {
+    border-color: var(--current-bg);
+    background-color: var(--current-bg);
+    color: white;
+  }
+
+  /* Timer area */
+  .timer-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .timer-ring-wrapper {
+    position: relative;
+    width: 220px;
+    height: 220px;
+    margin-bottom: 16px;
+  }
+
+  .progress-ring {
+    transform: rotate(-90deg);
+    width: 220px;
+    height: 220px;
+  }
+
+  .progress-ring-bg {
+    fill: none;
+    stroke: #ecf0f1;
+    stroke-width: 8;
+  }
+
+  .progress-ring-fg {
+    fill: none;
+    stroke: var(--current-bg);
+    stroke-width: 8;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.5s linear, stroke 0.5s ease;
+  }
+
+  .timer-display {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 3.2rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: #2c3e50;
+  }
+
+  .timer-display.pulse {
+    animation: pulse 0.6s ease-in-out 3;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); }
+    50% { transform: translate(-50%, -50%) scale(1.1); }
+  }
+
+  /* Timer adjust buttons */
+  .timer-adjust {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 8px;
+  }
+
+  .timer-adjust button {
+    width: 36px;
+    height: 36px;
+    border: 2px solid #ddd;
+    border-radius: 50%;
+    background: white;
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+    color: #555;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .timer-adjust button:hover:not(:disabled) {
+    border-color: var(--current-bg);
+    color: var(--current-bg);
+  }
+
+  .timer-adjust button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* Task input */
+  .task-input-wrapper {
+    margin-bottom: 8px;
+  }
+
+  .task-input-wrapper input {
+    width: 100%;
+    padding: 10px 14px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.3s;
+  }
+
+  .task-input-wrapper input:focus {
+    border-color: var(--current-bg);
+  }
+
+  /* Tag selector */
+  .tag-selector {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+
+  .tag-btn {
+    padding: 4px 12px;
+    border: 2px solid #ddd;
+    border-radius: 16px;
+    background: white;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #666;
+    transition: all 0.2s;
+  }
+
+  .tag-btn:hover {
+    border-color: #999;
+  }
+
+  .tag-btn.active {
+    border-color: var(--current-bg);
+    background-color: var(--current-bg);
+    color: white;
+  }
+
+  /* Buttons */
+  .controls {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 8px;
+  }
+
+  .controls button {
+    padding: 12px 28px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+  }
+
+  .controls button:active {
+    transform: scale(0.96);
+  }
+
+  .btn-start {
+    background-color: var(--current-bg);
+    color: white;
+  }
+
+  .btn-start:hover {
+    opacity: 0.9;
+  }
+
+  .btn-reset {
+    background-color: #95a5a6;
+    color: white;
+  }
+
+  .btn-reset:hover {
+    background-color: #7f8c8d;
+  }
+
+  .btn-skip {
+    background-color: #f39c12;
+    color: white;
+  }
+
+  .btn-skip:hover {
+    background-color: #e67e22;
+  }
+
+  /* Keyboard hints */
+  .keyboard-hints {
+    text-align: center;
+    font-size: 0.78rem;
+    color: #999;
+    margin-bottom: 24px;
+  }
+
+  /* Settings */
+  .settings-section {
+    margin-bottom: 24px;
+  }
+
+  .settings-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: 1px solid #bdc3c7;
+    border-radius: 8px;
+    padding: 8px 14px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #555;
+    margin: 0 auto 10px;
+  }
+
+  .settings-toggle:hover {
+    background-color: #f0f0f0;
+  }
+
+  .settings-panel {
+    display: none;
+    background: white;
+    border-radius: 10px;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+
+  .settings-panel.open {
+    display: block;
+  }
+
+  .setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .setting-row:last-child {
+    margin-bottom: 0;
+  }
+
+  .setting-row label {
+    font-size: 0.9rem;
+    color: #555;
+  }
+
+  .setting-row input[type="number"] {
+    width: 70px;
+    padding: 6px 8px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    text-align: center;
+  }
+
+  .setting-row input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+  }
+
+  .btn-notification-toggle {
+    background: none;
+    border: 1px solid #bdc3c7;
+    border-radius: 6px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: #555;
+  }
+
+  .btn-notification-toggle:hover {
+    background-color: #f0f0f0;
+  }
+
+  /* Stats */
+  .stats-section {
+    background: white;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+
+  .stats-section h2 {
+    font-size: 1rem;
+    margin-bottom: 10px;
+    color: #34495e;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 10px;
+    text-align: center;
+  }
+
+  .stat-item .stat-value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--current-bg);
+  }
+
+  .stat-item .stat-label {
+    font-size: 0.75rem;
+    color: #888;
+    margin-top: 2px;
+  }
+
+  /* Goal progress */
+  .goal-section {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid #f0f0f0;
+  }
+
+  .goal-progress-text {
+    font-size: 0.9rem;
+    color: #555;
+    margin-bottom: 6px;
+  }
+
+  .goal-bar-wrapper {
+    width: 100%;
+    height: 10px;
+    background: #ecf0f1;
+    border-radius: 5px;
+    overflow: hidden;
+  }
+
+  .goal-bar-fill {
+    height: 100%;
+    background: var(--current-bg);
+    border-radius: 5px;
+    transition: width 0.3s ease;
+  }
+
+  .goal-reached-msg {
+    margin-top: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #27ae60;
+    text-align: center;
+  }
+
+  /* History chart */
+  .history-section {
+    background: white;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+
+  .history-section h2 {
+    font-size: 1rem;
+    margin-bottom: 10px;
+    color: #34495e;
+  }
+
+  .history-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .history-chart .empty-chart {
+    text-align: center;
+    color: #bbb;
+    padding: 16px;
+    font-size: 0.9rem;
+  }
+
+  .history-bar {
+    height: 18px;
+    border-radius: 4px;
+    min-width: 8px;
+    transition: width 0.3s ease;
+  }
+
+  .history-bar.work { background-color: #e74c3c; }
+  .history-bar.short_break { background-color: #27ae60; }
+  .history-bar.long_break { background-color: #2980b9; }
+
+  /* Session log */
+  .log-section {
+    background: white;
+    border-radius: 10px;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+
+  .log-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .log-header h2 {
+    font-size: 1rem;
+    color: #34495e;
+  }
+
+  .btn-clear-log {
+    background: none;
+    border: 1px solid #e74c3c;
+    color: #e74c3c;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    cursor: pointer;
+  }
+
+  .btn-clear-log:hover {
+    background-color: #fdedec;
+  }
+
+  /* Log filter bar */
+  .log-filter-bar {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+
+  .filter-btn {
+    padding: 4px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background: white;
+    cursor: pointer;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: #666;
+    transition: all 0.2s;
+  }
+
+  .filter-btn:hover {
+    border-color: #999;
+  }
+
+  .filter-btn.active {
+    background-color: #2c3e50;
+    color: white;
+    border-color: #2c3e50;
+  }
+
+  .tag-filter-select {
+    padding: 4px 8px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    color: #666;
+    background: white;
+    cursor: pointer;
+    margin-left: auto;
+  }
+
+  .session-log {
+    max-height: 300px;
+    overflow-y: auto;
+    list-style: none;
+  }
+
+  .session-log .log-entry {
+    padding: 10px;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+
+  .session-log .log-entry:last-child {
+    border-bottom: none;
+  }
+
+  .log-type {
+    font-weight: 600;
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    margin-right: 6px;
+  }
+
+  .log-type.work { background: #fdedec; color: #e74c3c; }
+  .log-type.short-break { background: #eafaf1; color: #27ae60; }
+  .log-type.long-break { background: #ebf5fb; color: #2980b9; }
+
+  .log-tag {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    background: #f0f0f0;
+    color: #555;
+    margin-right: 6px;
+  }
+
+  .log-task { color: #2c3e50; }
+  .log-meta { color: #999; font-size: 0.78rem; }
+
+  .empty-log {
+    text-align: center;
+    color: #bbb;
+    padding: 20px;
+    font-size: 0.9rem;
+  }
+
+  /* Focus mode dimming */
+  .app[data-focus-mode="true"] .focus-dimmable {
+    opacity: 0.15;
+    pointer-events: none;
+  }
+
+  .app[data-focus-mode="true"] {
+    /* slightly darker feel handled by body */
+  }
+
+  @media (max-width: 500px) {
+    .timer-display { font-size: 2.6rem; }
+    .timer-ring-wrapper { width: 180px; height: 180px; }
+    .progress-ring { width: 180px; height: 180px; }
+    .stats-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
+  }
+</style>
+</head>
+<body>
+<div class="app" data-testid="focus-mode-overlay">
+  <div class="header-row">
+    <h1>Pomodoro Timer</h1>
+    <button class="focus-mode-toggle" data-testid="focus-mode-toggle">Focus Mode</button>
+  </div>
+
+  <div class="mode-label" data-testid="mode-label">Work</div>
+  <div class="session-indicator" data-testid="session-indicator">Session 1 of 4</div>
+
+  <div class="templates-section focus-dimmable" data-testid="templates-section">
+    <button class="template-btn" data-testid="template-btn" data-template="sprint">Sprint</button>
+    <button class="template-btn" data-testid="template-btn" data-template="standard">Standard</button>
+    <button class="template-btn" data-testid="template-btn" data-template="deep-work">Deep Work</button>
+  </div>
+
+  <div class="task-input-wrapper">
+    <input type="text" data-testid="task-input" placeholder="What are you working on?" />
+  </div>
+
+  <div class="tag-selector" data-testid="tag-selector">
+    <button class="tag-btn" data-testid="tag-btn" data-tag="work">Work</button>
+    <button class="tag-btn" data-testid="tag-btn" data-tag="study">Study</button>
+    <button class="tag-btn" data-testid="tag-btn" data-tag="personal">Personal</button>
+    <button class="tag-btn" data-testid="tag-btn" data-tag="creative">Creative</button>
+    <button class="tag-btn" data-testid="tag-btn" data-tag="health">Health</button>
+  </div>
+
+  <div class="timer-container">
+    <div class="timer-ring-wrapper">
+      <svg class="progress-ring" data-testid="progress-ring" viewBox="0 0 220 220">
+        <circle class="progress-ring-bg" cx="110" cy="110" r="100" />
+        <circle class="progress-ring-fg" cx="110" cy="110" r="100" />
+      </svg>
+      <div class="timer-display" data-testid="timer-display">25:00</div>
+    </div>
+    <div class="timer-adjust">
+      <button data-testid="timer-decrement">-</button>
+      <button data-testid="timer-increment">+</button>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="btn-start" data-testid="start-pause-btn">Start</button>
+    <button class="btn-reset" data-testid="reset-btn">Reset</button>
+    <button class="btn-skip" data-testid="skip-btn">Skip</button>
+  </div>
+
+  <div class="keyboard-hints" data-testid="keyboard-hints">Space: Start/Pause | R: Reset | S: Settings</div>
+
+  <div class="settings-section focus-dimmable">
+    <button class="settings-toggle" data-testid="settings-toggle">Settings</button>
+    <div class="settings-panel" id="settings-panel">
+      <div class="setting-row">
+        <label>Work (min)</label>
+        <input type="number" data-testid="work-duration" min="1" max="60" value="25" />
+      </div>
+      <div class="setting-row">
+        <label>Short Break (min)</label>
+        <input type="number" data-testid="short-break-duration" min="1" max="30" value="5" />
+      </div>
+      <div class="setting-row">
+        <label>Long Break (min)</label>
+        <input type="number" data-testid="long-break-duration" min="1" max="60" value="15" />
+      </div>
+      <div class="setting-row">
+        <label>Daily Goal (sessions)</label>
+        <input type="number" data-testid="daily-goal-input" min="1" max="20" value="8" />
+      </div>
+      <div class="setting-row">
+        <label>Auto-start next session</label>
+        <input type="checkbox" data-testid="auto-start-checkbox" />
+      </div>
+      <div class="setting-row">
+        <label>Notifications</label>
+        <button class="btn-notification-toggle" data-testid="notification-toggle">Enable Notifications</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-section focus-dimmable" data-testid="stats-section">
+    <h2>Statistics</h2>
+    <div class="stats-grid">
+      <div class="stat-item">
+        <div class="stat-value" id="stat-sessions">0</div>
+        <div class="stat-label">Sessions</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="stat-focus">0 min</div>
+        <div class="stat-label">Focus Time</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="stat-streak">0</div>
+        <div class="stat-label">Streak</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" data-testid="focus-score" id="stat-focus-score" style="color: #e74c3c;">0</div>
+        <div class="stat-label">Focus Score</div>
+      </div>
+    </div>
+    <div class="goal-section">
+      <div class="goal-progress-text" data-testid="goal-progress">0 / 8 sessions</div>
+      <div class="goal-bar-wrapper">
+        <div class="goal-bar-fill" data-testid="goal-progress-bar" style="width: 0%"></div>
+      </div>
+      <div class="goal-reached-msg" data-testid="goal-reached-msg" style="display: none;">Daily goal reached!</div>
+    </div>
+  </div>
+
+  <div class="history-section focus-dimmable">
+    <h2>Session History</h2>
+    <div class="history-chart" data-testid="history-chart">
+      <div class="empty-chart">No sessions yet</div>
+    </div>
+  </div>
+
+  <div class="log-section focus-dimmable">
+    <div class="log-header">
+      <h2>Session Log</h2>
+      <button class="btn-clear-log" data-testid="clear-log-btn">Clear Log</button>
+    </div>
+    <div class="log-filter-bar" data-testid="log-filter">
+      <button class="filter-btn active" data-testid="filter-btn" data-filter="all">All</button>
+      <button class="filter-btn" data-testid="filter-btn" data-filter="work">Work</button>
+      <button class="filter-btn" data-testid="filter-btn" data-filter="short_break">Short Break</button>
+      <button class="filter-btn" data-testid="filter-btn" data-filter="long_break">Long Break</button>
+      <select class="tag-filter-select" data-testid="tag-filter">
+        <option value="all">All Tags</option>
+      </select>
+    </div>
+    <ul class="session-log" data-testid="session-log"></ul>
+  </div>
+</div>
+
+<script>
+(function() {
+  // ---- State ----
+  var MODES = { WORK: 'work', SHORT_BREAK: 'short_break', LONG_BREAK: 'long_break' };
+  // Cycle: W SB W SB W SB W LB
+  var CYCLE = [
+    MODES.WORK, MODES.SHORT_BREAK,
+    MODES.WORK, MODES.SHORT_BREAK,
+    MODES.WORK, MODES.SHORT_BREAK,
+    MODES.WORK, MODES.LONG_BREAK
+  ];
+
+  var TEMPLATES = {
+    'sprint': { work: 15, shortBreak: 3, longBreak: 10 },
+    'standard': { work: 25, shortBreak: 5, longBreak: 15 },
+    'deep-work': { work: 50, shortBreak: 10, longBreak: 30 }
+  };
+
+  var settings = { work: 25, shortBreak: 5, longBreak: 15 };
+  var dailyGoal = 8;
+  var autoStart = false;
+  var cycleIndex = 0;
+  var timeRemaining = settings.work * 60;
+  var totalDuration = settings.work * 60;
+  var timerInterval = null;
+  var isRunning = false;
+  var timerStartedForStreak = false;
+
+  var stats = { completedSessions: 0, totalFocusMinutes: 0, streak: 0 };
+  var sessionLog = [];
+
+  // v3 state
+  var selectedTag = null;
+  var focusMode = false;
+  var activeTemplate = null;
+  var noResets = true;
+  var activeTypeFilter = 'all';
+  var activeTagFilter = 'all';
+
+  // ---- DOM refs ----
+  var qs = function(sel) { return document.querySelector(sel); };
+  var timerDisplay = qs('[data-testid="timer-display"]');
+  var modeLabel = qs('[data-testid="mode-label"]');
+  var startPauseBtn = qs('[data-testid="start-pause-btn"]');
+  var resetBtn = qs('[data-testid="reset-btn"]');
+  var skipBtn = qs('[data-testid="skip-btn"]');
+  var sessionIndicator = qs('[data-testid="session-indicator"]');
+  var taskInput = qs('[data-testid="task-input"]');
+  var settingsToggle = qs('[data-testid="settings-toggle"]');
+  var settingsPanel = qs('#settings-panel');
+  var workDurationInput = qs('[data-testid="work-duration"]');
+  var shortBreakInput = qs('[data-testid="short-break-duration"]');
+  var longBreakInput = qs('[data-testid="long-break-duration"]');
+  var dailyGoalInput = qs('[data-testid="daily-goal-input"]');
+  var autoStartCheckbox = qs('[data-testid="auto-start-checkbox"]');
+  var notificationToggle = qs('[data-testid="notification-toggle"]');
+  var sessionLogEl = qs('[data-testid="session-log"]');
+  var clearLogBtn = qs('[data-testid="clear-log-btn"]');
+  var statSessions = qs('#stat-sessions');
+  var statFocus = qs('#stat-focus');
+  var statStreak = qs('#stat-streak');
+  var progressFg = qs('.progress-ring-fg');
+  var goalProgressEl = qs('[data-testid="goal-progress"]');
+  var goalProgressBar = qs('[data-testid="goal-progress-bar"]');
+  var goalReachedMsg = qs('[data-testid="goal-reached-msg"]');
+  var historyChart = qs('[data-testid="history-chart"]');
+  var focusScoreEl = qs('[data-testid="focus-score"]');
+  var focusModeToggle = qs('[data-testid="focus-mode-toggle"]');
+  var appWrapper = qs('.app');
+  var timerIncrementBtn = qs('[data-testid="timer-increment"]');
+  var timerDecrementBtn = qs('[data-testid="timer-decrement"]');
+  var tagFilterSelect = qs('[data-testid="tag-filter"]');
+
+  // ---- Progress ring setup ----
+  var RING_RADIUS = 100;
+  var CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
+  progressFg.style.strokeDasharray = CIRCUMFERENCE;
+  progressFg.style.strokeDashoffset = '0';
+
+  // ---- Helpers ----
+  function currentMode() { return CYCLE[cycleIndex]; }
+
+  function modeDisplayName(mode) {
+    if (mode === MODES.WORK) return 'Work';
+    if (mode === MODES.SHORT_BREAK) return 'Short Break';
+    return 'Long Break';
+  }
+
+  function modeDuration(mode) {
+    if (mode === MODES.WORK) return settings.work;
+    if (mode === MODES.SHORT_BREAK) return settings.shortBreak;
+    return settings.longBreak;
+  }
+
+  function modeMaxMinutes(mode) {
+    if (mode === MODES.WORK) return 60;
+    if (mode === MODES.SHORT_BREAK) return 30;
+    return 60;
+  }
+
+  function getWorkSessionNumber() {
+    return Math.floor(cycleIndex / 2) + 1;
+  }
+
+  function formatTime(totalSeconds) {
+    var m = Math.floor(totalSeconds / 60);
+    var s = totalSeconds % 60;
+    return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+  }
+
+  function formatFocusTime(totalMinutes) {
+    if (totalMinutes < 60) return totalMinutes + ' min';
+    var hr = Math.floor(totalMinutes / 60);
+    var min = totalMinutes % 60;
+    return hr + ' hr ' + min + ' min';
+  }
+
+  function now24() {
+    var d = new Date();
+    return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  }
+
+  function calculateFocusScore() {
+    var score = Math.min(100, Math.round(
+      (stats.completedSessions / dailyGoal) * 50 +
+      (stats.streak / dailyGoal) * 30 +
+      (noResets ? 20 : 0)
+    ));
+    return score;
+  }
+
+  function getFocusScoreColor(score) {
+    if (score >= 70) return '#27ae60';
+    if (score >= 40) return '#f39c12';
+    return '#e74c3c';
+  }
+
+  // ---- Render ----
+  function updateDisplay() {
+    var mode = currentMode();
+    var name = modeDisplayName(mode);
+    var timeStr = formatTime(timeRemaining);
+
+    timerDisplay.textContent = timeStr;
+    modeLabel.textContent = name;
+    sessionIndicator.textContent = 'Session ' + getWorkSessionNumber() + ' of 4';
+    document.title = timeStr + ' - ' + name + ' | Pomodoro Timer';
+
+    startPauseBtn.textContent = isRunning ? 'Pause' : 'Start';
+
+    // Progress ring
+    var fraction = totalDuration > 0 ? timeRemaining / totalDuration : 1;
+    var offset = CIRCUMFERENCE * (1 - fraction);
+    progressFg.style.strokeDashoffset = offset;
+
+    // Colors
+    applyModeColors(mode);
+
+    // Stats
+    statSessions.textContent = stats.completedSessions;
+    statFocus.textContent = formatFocusTime(stats.totalFocusMinutes);
+    statStreak.textContent = stats.streak;
+
+    // Focus score
+    updateFocusScore();
+
+    // Goal progress
+    updateGoalDisplay();
+
+    // Timer adjust buttons
+    updateTimerAdjustButtons();
+  }
+
+  function updateFocusScore() {
+    var score = calculateFocusScore();
+    focusScoreEl.textContent = score;
+    focusScoreEl.style.color = getFocusScoreColor(score);
+  }
+
+  function updateGoalDisplay() {
+    goalProgressEl.textContent = stats.completedSessions + ' / ' + dailyGoal + ' sessions';
+
+    var pct = dailyGoal > 0 ? Math.min(100, (stats.completedSessions / dailyGoal) * 100) : 0;
+    goalProgressBar.style.width = pct + '%';
+
+    if (stats.completedSessions >= dailyGoal) {
+      goalReachedMsg.style.display = 'block';
+    } else {
+      goalReachedMsg.style.display = 'none';
+    }
+  }
+
+  function updateTimerAdjustButtons() {
+    if (isRunning) {
+      timerIncrementBtn.disabled = true;
+      timerDecrementBtn.disabled = true;
+    } else {
+      timerIncrementBtn.disabled = false;
+      timerDecrementBtn.disabled = false;
+    }
+  }
+
+  function applyModeColors(mode) {
+    if (mode === MODES.WORK) {
+      document.body.style.backgroundColor = 'var(--work-bg-light)';
+      document.documentElement.style.setProperty('--current-bg', 'var(--work-bg)');
+      document.documentElement.style.setProperty('--current-bg-light', 'var(--work-bg-light)');
+    } else if (mode === MODES.SHORT_BREAK) {
+      document.body.style.backgroundColor = 'var(--short-bg-light)';
+      document.documentElement.style.setProperty('--current-bg', 'var(--short-bg)');
+      document.documentElement.style.setProperty('--current-bg-light', 'var(--short-bg-light)');
+    } else {
+      document.body.style.backgroundColor = 'var(--long-bg-light)';
+      document.documentElement.style.setProperty('--current-bg', 'var(--long-bg)');
+      document.documentElement.style.setProperty('--current-bg-light', 'var(--long-bg-light)');
+    }
+    // Update inline styles that rely on var
+    progressFg.style.stroke = getComputedStyle(document.documentElement).getPropertyValue('--current-bg').trim();
+    startPauseBtn.style.backgroundColor = getComputedStyle(document.documentElement).getPropertyValue('--current-bg').trim();
+
+    // Stat values (excluding focus score which has its own color)
+    var statValues = document.querySelectorAll('.stat-value');
+    var c = getComputedStyle(document.documentElement).getPropertyValue('--current-bg').trim();
+    statValues.forEach(function(el) {
+      if (el.id !== 'stat-focus-score') {
+        el.style.color = c;
+      }
+    });
+
+    // Task input focus border
+    taskInput.style.setProperty('--current-bg', c);
+  }
+
+  function renderLog() {
+    sessionLogEl.innerHTML = '';
+    if (sessionLog.length === 0) {
+      return;
+    }
+    // Display reverse chronological
+    for (var i = sessionLog.length - 1; i >= 0; i--) {
+      var entry = sessionLog[i];
+      var li = document.createElement('li');
+      li.classList.add('log-entry');
+      li.setAttribute('data-testid', 'log-entry');
+      li.setAttribute('data-log-mode', entry.mode);
+      li.setAttribute('data-log-tag', entry.tag || 'Untagged');
+
+      var typeClass = entry.mode === MODES.WORK ? 'work' :
+                       entry.mode === MODES.SHORT_BREAK ? 'short-break' : 'long-break';
+      var typeName = modeDisplayName(entry.mode);
+
+      var html = '<span class="log-type ' + typeClass + '">' + typeName + '</span>';
+      var tagLabel = entry.tag || 'Untagged';
+      html += '<span class="log-tag">' + escapeHtml(tagLabel) + '</span>';
+      if (entry.mode === MODES.WORK) {
+        html += '<span class="log-task">' + escapeHtml(entry.task) + '</span><br>';
+      }
+      html += '<span class="log-meta">' + entry.duration + ' min &middot; ' + entry.timestamp + '</span>';
+
+      li.innerHTML = html;
+      sessionLogEl.appendChild(li);
+    }
+
+    applyLogFilters();
+    updateTagFilterOptions();
+  }
+
+  function applyLogFilters() {
+    var entries = sessionLogEl.querySelectorAll('[data-testid="log-entry"]');
+    entries.forEach(function(li) {
+      var entryMode = li.getAttribute('data-log-mode');
+      var entryTag = li.getAttribute('data-log-tag');
+
+      var typeMatch = (activeTypeFilter === 'all') || (entryMode === activeTypeFilter);
+      var tagMatch = (activeTagFilter === 'all') || (entryTag === activeTagFilter);
+
+      if (typeMatch && tagMatch) {
+        li.style.display = '';
+      } else {
+        li.style.display = 'none';
+      }
+    });
+  }
+
+  function updateTagFilterOptions() {
+    var currentVal = tagFilterSelect.value;
+    // Collect unique tags from log
+    var tags = {};
+    for (var i = 0; i < sessionLog.length; i++) {
+      var t = sessionLog[i].tag || 'Untagged';
+      tags[t] = true;
+    }
+
+    tagFilterSelect.innerHTML = '<option value="all">All Tags</option>';
+    var sortedTags = Object.keys(tags).sort();
+    for (var j = 0; j < sortedTags.length; j++) {
+      var opt = document.createElement('option');
+      opt.value = sortedTags[j];
+      opt.textContent = sortedTags[j];
+      tagFilterSelect.appendChild(opt);
+    }
+
+    // Restore selection if still valid
+    if (tags[currentVal] || currentVal === 'all') {
+      tagFilterSelect.value = currentVal;
+    } else {
+      tagFilterSelect.value = 'all';
+      activeTagFilter = 'all';
+    }
+  }
+
+  function renderHistoryChart() {
+    historyChart.innerHTML = '';
+
+    if (sessionLog.length === 0) {
+      var emptyDiv = document.createElement('div');
+      emptyDiv.className = 'empty-chart';
+      emptyDiv.textContent = 'No sessions yet';
+      historyChart.appendChild(emptyDiv);
+      return;
+    }
+
+    // Show last 10 sessions
+    var last10 = sessionLog.slice(-10);
+    var maxDur = 0;
+    for (var i = 0; i < last10.length; i++) {
+      if (last10[i].duration > maxDur) maxDur = last10[i].duration;
+    }
+    if (maxDur === 0) maxDur = 1;
+
+    for (var j = 0; j < last10.length; j++) {
+      var bar = document.createElement('div');
+      bar.className = 'history-bar ' + last10[j].mode;
+      bar.setAttribute('data-testid', 'history-bar');
+      var widthPct = (last10[j].duration / maxDur) * 100;
+      bar.style.width = widthPct + '%';
+      historyChart.appendChild(bar);
+    }
+  }
+
+  function escapeHtml(str) {
+    var d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  // ---- Audio ----
+  function playAlert() {
+    try {
+      var AudioCtx = window.AudioContext || window.webkitAudioContext;
+      var ctx = new AudioCtx();
+      [0, 0.2, 0.4].forEach(function(delay) {
+        var osc = ctx.createOscillator();
+        var gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.value = 830;
+        osc.type = 'sine';
+        gain.gain.setValueAtTime(0.3, ctx.currentTime + delay);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.15);
+        osc.start(ctx.currentTime + delay);
+        osc.stop(ctx.currentTime + delay + 0.15);
+      });
+    } catch(e) { /* audio not available */ }
+  }
+
+  // ---- Notifications ----
+  function updateNotificationButton() {
+    if (!('Notification' in window)) {
+      notificationToggle.textContent = 'Notifications Denied';
+      return;
+    }
+    if (Notification.permission === 'granted') {
+      notificationToggle.textContent = 'Notifications Enabled';
+    } else if (Notification.permission === 'denied') {
+      notificationToggle.textContent = 'Notifications Denied';
+    } else {
+      notificationToggle.textContent = 'Enable Notifications';
+    }
+  }
+
+  function sendNotification(nextMode) {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    var nextName = modeDisplayName(nextMode);
+    try {
+      new Notification('Pomodoro Timer', {
+        body: 'Time for a ' + nextName + '!'
+      });
+    } catch(e) { /* notification not available */ }
+  }
+
+  // ---- Timer logic ----
+  function startTimer() {
+    if (isRunning) return;
+    isRunning = true;
+    if (currentMode() === MODES.WORK) {
+      timerStartedForStreak = true;
+    }
+    timerInterval = setInterval(tick, 1000);
+    updateDisplay();
+  }
+
+  function pauseTimer() {
+    if (!isRunning) return;
+    isRunning = false;
+    clearInterval(timerInterval);
+    timerInterval = null;
+    updateDisplay();
+  }
+
+  function resetTimer() {
+    var wasRunningWork = isRunning && currentMode() === MODES.WORK;
+
+    clearInterval(timerInterval);
+    timerInterval = null;
+    isRunning = false;
+
+    // Break streak if resetting mid-work-session that was started
+    if (currentMode() === MODES.WORK && timerStartedForStreak) {
+      stats.streak = 0;
+      noResets = false;
+    }
+    timerStartedForStreak = false;
+
+    var dur = modeDuration(currentMode());
+    timeRemaining = dur * 60;
+    totalDuration = dur * 60;
+    updateDisplay();
+  }
+
+  function skipSession() {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    isRunning = false;
+
+    // Break streak if work session was started
+    if (currentMode() === MODES.WORK && timerStartedForStreak) {
+      stats.streak = 0;
+    }
+    timerStartedForStreak = false;
+
+    // Do NOT log, do NOT count stats
+    // Advance cycle
+    cycleIndex = (cycleIndex + 1) % CYCLE.length;
+
+    var newDur = modeDuration(currentMode());
+    timeRemaining = newDur * 60;
+    totalDuration = newDur * 60;
+
+    updateDisplay();
+  }
+
+  function tick() {
+    if (timeRemaining <= 0) return;
+    timeRemaining--;
+    updateDisplay();
+    if (timeRemaining <= 0) {
+      completeCurrentSession();
+    }
+  }
+
+  function completeCurrentSession() {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    isRunning = false;
+
+    // Pulse animation
+    timerDisplay.classList.add('pulse');
+    setTimeout(function() { timerDisplay.classList.remove('pulse'); }, 2000);
+
+    playAlert();
+
+    var mode = currentMode();
+    var dur = modeDuration(mode);
+    var task = (taskInput.value.trim() || 'Untitled task');
+    var tag = selectedTag || null;
+
+    // Log entry
+    sessionLog.push({
+      mode: mode,
+      task: task,
+      duration: dur,
+      timestamp: now24(),
+      tag: tag ? tag.charAt(0).toUpperCase() + tag.slice(1) : null
+    });
+
+    // Stats
+    if (mode === MODES.WORK) {
+      stats.completedSessions++;
+      stats.totalFocusMinutes += dur;
+      stats.streak++;
+    }
+
+    timerStartedForStreak = false;
+
+    // Advance cycle
+    var nextCycleIndex = (cycleIndex + 1) % CYCLE.length;
+    var nextMode = CYCLE[nextCycleIndex];
+
+    // Send notification about next session
+    sendNotification(nextMode);
+
+    cycleIndex = nextCycleIndex;
+
+    // Set new timer
+    var newDur = modeDuration(currentMode());
+    timeRemaining = newDur * 60;
+    totalDuration = newDur * 60;
+
+    renderLog();
+    renderHistoryChart();
+    updateDisplay();
+
+    // Auto-start if enabled
+    if (autoStart) {
+      startTimer();
+    }
+  }
+
+  // ---- Settings ----
+  function clamp(val, min, max) {
+    if (isNaN(val) || val < min) return min;
+    if (val > max) return max;
+    return Math.floor(val);
+  }
+
+  function readSettings() {
+    settings.work = clamp(Number(workDurationInput.value), 1, 60);
+    settings.shortBreak = clamp(Number(shortBreakInput.value), 1, 30);
+    settings.longBreak = clamp(Number(longBreakInput.value), 1, 60);
+    dailyGoal = clamp(Number(dailyGoalInput.value), 1, 20);
+    autoStart = autoStartCheckbox.checked;
+
+    workDurationInput.value = settings.work;
+    shortBreakInput.value = settings.shortBreak;
+    longBreakInput.value = settings.longBreak;
+    dailyGoalInput.value = dailyGoal;
+  }
+
+  function onSettingsChange() {
+    readSettings();
+
+    // Deselect active template when manual change
+    if (activeTemplate !== null) {
+      activeTemplate = null;
+      updateTemplateButtons();
+    }
+
+    if (!isRunning) {
+      var dur = modeDuration(currentMode());
+      timeRemaining = dur * 60;
+      totalDuration = dur * 60;
+      updateDisplay();
+    } else {
+      updateGoalDisplay();
+    }
+  }
+
+  function onAutoStartChange() {
+    autoStart = autoStartCheckbox.checked;
+  }
+
+  function onDailyGoalChange() {
+    dailyGoal = clamp(Number(dailyGoalInput.value), 1, 20);
+    dailyGoalInput.value = dailyGoal;
+    updateGoalDisplay();
+    updateFocusScore();
+  }
+
+  // ---- Templates ----
+  function applyTemplate(templateName) {
+    var tmpl = TEMPLATES[templateName];
+    if (!tmpl) return;
+
+    activeTemplate = templateName;
+    settings.work = tmpl.work;
+    settings.shortBreak = tmpl.shortBreak;
+    settings.longBreak = tmpl.longBreak;
+
+    // Update settings inputs
+    workDurationInput.value = tmpl.work;
+    shortBreakInput.value = tmpl.shortBreak;
+    longBreakInput.value = tmpl.longBreak;
+
+    // Reset timer to new duration
+    clearInterval(timerInterval);
+    timerInterval = null;
+    isRunning = false;
+    timerStartedForStreak = false;
+
+    var dur = modeDuration(currentMode());
+    timeRemaining = dur * 60;
+    totalDuration = dur * 60;
+
+    updateTemplateButtons();
+    updateDisplay();
+  }
+
+  function updateTemplateButtons() {
+    var btns = document.querySelectorAll('[data-testid="template-btn"]');
+    btns.forEach(function(btn) {
+      if (btn.getAttribute('data-template') === activeTemplate) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+  }
+
+  // ---- Tags ----
+  function selectTag(tagName) {
+    if (selectedTag === tagName) {
+      selectedTag = null;
+    } else {
+      selectedTag = tagName;
+    }
+    updateTagButtons();
+  }
+
+  function updateTagButtons() {
+    var btns = document.querySelectorAll('[data-testid="tag-btn"]');
+    btns.forEach(function(btn) {
+      if (btn.getAttribute('data-tag') === selectedTag) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+  }
+
+  // ---- Focus Mode ----
+  function toggleFocusMode() {
+    focusMode = !focusMode;
+    if (focusMode) {
+      appWrapper.setAttribute('data-focus-mode', 'true');
+      focusModeToggle.classList.add('active');
+    } else {
+      appWrapper.removeAttribute('data-focus-mode');
+      focusModeToggle.classList.remove('active');
+    }
+  }
+
+  // ---- Timer Adjustment ----
+  function incrementTimer() {
+    if (isRunning) return;
+    var currentMinutes = Math.ceil(timeRemaining / 60);
+    var maxMin = modeMaxMinutes(currentMode());
+    var newMinutes = Math.min(currentMinutes + 5, maxMin);
+    timeRemaining = newMinutes * 60;
+    totalDuration = newMinutes * 60;
+    updateDisplay();
+  }
+
+  function decrementTimer() {
+    if (isRunning) return;
+    var currentMinutes = Math.ceil(timeRemaining / 60);
+    var newMinutes = Math.max(currentMinutes - 5, 1);
+    timeRemaining = newMinutes * 60;
+    totalDuration = newMinutes * 60;
+    updateDisplay();
+  }
+
+  // ---- Log Filtering ----
+  function setTypeFilter(filterValue) {
+    activeTypeFilter = filterValue;
+    var btns = document.querySelectorAll('[data-testid="filter-btn"]');
+    btns.forEach(function(btn) {
+      if (btn.getAttribute('data-filter') === filterValue) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+    applyLogFilters();
+  }
+
+  function setTagFilter(tagValue) {
+    activeTagFilter = tagValue;
+    applyLogFilters();
+  }
+
+  // ---- Keyboard shortcuts ----
+  function isTextInputFocused() {
+    var el = document.activeElement;
+    if (!el) return false;
+    var tag = el.tagName.toLowerCase();
+    if (tag === 'input' && (el.type === 'text' || el.type === 'number' || el.type === 'search' || el.type === 'email' || el.type === 'password' || el.type === 'url' || el.type === 'tel')) return true;
+    if (tag === 'textarea') return true;
+    if (el.contentEditable === 'true') return true;
+    return false;
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (isTextInputFocused()) return;
+
+    if (e.key === ' ' || e.code === 'Space') {
+      e.preventDefault();
+      if (isRunning) pauseTimer(); else startTimer();
+    } else if (e.key === 'r' || e.key === 'R') {
+      e.preventDefault();
+      resetTimer();
+    } else if (e.key === 's' || e.key === 'S') {
+      e.preventDefault();
+      settingsPanel.classList.toggle('open');
+    }
+  });
+
+  // ---- Events ----
+  startPauseBtn.addEventListener('click', function() {
+    if (isRunning) pauseTimer(); else startTimer();
+  });
+
+  resetBtn.addEventListener('click', resetTimer);
+  skipBtn.addEventListener('click', skipSession);
+
+  settingsToggle.addEventListener('click', function() {
+    settingsPanel.classList.toggle('open');
+  });
+
+  [workDurationInput, shortBreakInput, longBreakInput].forEach(function(input) {
+    input.addEventListener('input', onSettingsChange);
+    input.addEventListener('change', onSettingsChange);
+  });
+
+  dailyGoalInput.addEventListener('input', onDailyGoalChange);
+  dailyGoalInput.addEventListener('change', onDailyGoalChange);
+
+  autoStartCheckbox.addEventListener('change', onAutoStartChange);
+
+  notificationToggle.addEventListener('click', function() {
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'default') {
+      Notification.requestPermission().then(function() {
+        updateNotificationButton();
+      });
+    }
+    updateNotificationButton();
+  });
+
+  clearLogBtn.addEventListener('click', function() {
+    sessionLog = [];
+    renderLog();
+    renderHistoryChart();
+  });
+
+  // Template buttons
+  document.querySelectorAll('[data-testid="template-btn"]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      applyTemplate(btn.getAttribute('data-template'));
+    });
+  });
+
+  // Tag buttons
+  document.querySelectorAll('[data-testid="tag-btn"]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      selectTag(btn.getAttribute('data-tag'));
+    });
+  });
+
+  // Focus mode toggle
+  focusModeToggle.addEventListener('click', toggleFocusMode);
+
+  // Timer adjust
+  timerIncrementBtn.addEventListener('click', incrementTimer);
+  timerDecrementBtn.addEventListener('click', decrementTimer);
+
+  // Filter buttons
+  document.querySelectorAll('[data-testid="filter-btn"]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      setTypeFilter(btn.getAttribute('data-filter'));
+    });
+  });
+
+  // Tag filter dropdown
+  tagFilterSelect.addEventListener('change', function() {
+    setTagFilter(tagFilterSelect.value);
+  });
+
+  // ---- Test helpers ----
+  function resetAll() {
+    clearInterval(timerInterval);
+    timerInterval = null;
+    isRunning = false;
+    timerStartedForStreak = false;
+    cycleIndex = 0;
+    settings = { work: 25, shortBreak: 5, longBreak: 15 };
+    dailyGoal = 8;
+    autoStart = false;
+    workDurationInput.value = 25;
+    shortBreakInput.value = 5;
+    longBreakInput.value = 15;
+    dailyGoalInput.value = 8;
+    autoStartCheckbox.checked = false;
+    stats = { completedSessions: 0, totalFocusMinutes: 0, streak: 0 };
+    sessionLog = [];
+    timeRemaining = settings.work * 60;
+    totalDuration = settings.work * 60;
+    selectedTag = null;
+    focusMode = false;
+    activeTemplate = null;
+    noResets = true;
+    activeTypeFilter = 'all';
+    activeTagFilter = 'all';
+
+    // Reset UI states
+    appWrapper.removeAttribute('data-focus-mode');
+    focusModeToggle.classList.remove('active');
+    updateTagButtons();
+    updateTemplateButtons();
+    setTypeFilter('all');
+    tagFilterSelect.value = 'all';
+
+    renderLog();
+    renderHistoryChart();
+    updateDisplay();
+  }
+
+  window.pomodoroTestHelpers = {
+    completeSession: function() {
+      timeRemaining = 0;
+      completeCurrentSession();
+    },
+    resetAll: resetAll,
+    getState: function() {
+      return {
+        mode: currentMode(),
+        cycleIndex: cycleIndex,
+        timeRemaining: timeRemaining,
+        isRunning: isRunning,
+        completedSessions: stats.completedSessions,
+        streak: stats.streak,
+        dailyGoal: dailyGoal,
+        autoStart: autoStart,
+        logLength: sessionLog.length,
+        focusScore: calculateFocusScore(),
+        selectedTag: selectedTag,
+        focusMode: focusMode,
+        activeTemplate: activeTemplate,
+        noResets: noResets
+      };
+    }
+  };
+
+  // ---- Init ----
+  updateNotificationButton();
+  updateDisplay();
+  renderLog();
+  renderHistoryChart();
+})();
+</script>
+</body>
+</html>

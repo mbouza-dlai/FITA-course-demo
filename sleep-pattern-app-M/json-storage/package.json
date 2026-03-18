@@ -1,0 +1,12 @@
+{
+  "name": "sleep-tracker-json",
+  "version": "1.0.0",
+  "description": "Sleep pattern tracker with JSON file persistence",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vocab Builder — Language Learning App</title>
+
+  <style>
+    /* ─── Design Tokens ─────────────────────────────────────────────────── */
+    :root {
+      --color-bg:              #f5f4f0;
+      --color-surface:         #ffffff;
+      --color-border:          #e2e0da;
+      --color-primary:         #4f46e5;
+      --color-primary-hover:   #4338ca;
+      --color-learned:         #16a34a;
+      --color-learned-bg:      #f0fdf4;
+      --color-learned-border:  #bbf7d0;
+      --color-quiz:            #d97706;
+      --color-quiz-bg:         #fffbeb;
+      --color-quiz-border:     #fde68a;
+      --color-text:            #1c1917;
+      --color-text-muted:      #78716c;
+      --color-error:           #dc2626;
+      --color-error-bg:        #fef2f2;
+      --color-lookup-bg:       #f0f4ff;
+      --color-lookup-border:   #c7d2fe;
+
+      --radius:      12px;
+      --radius-sm:   8px;
+      --shadow:      0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.05);
+      --shadow-card: 0 2px 8px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+
+      --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+      /* Minimum touch target size — 44px is the Apple HIG recommendation */
+      --touch-target: 44px;
+    }
+
+    /* ─── Reset & Base ───────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-bg);
+      color: var(--color-text);
+      line-height: 1.6;
+      min-height: 100vh;
+      /* Prevent text from being too small on iOS */
+      -webkit-text-size-adjust: 100%;
+    }
+
+    /* ─── Layout ─────────────────────────────────────────────────────────── */
+    .app-wrapper {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 32px 16px 64px;
+    }
+
+    /* ─── Header ─────────────────────────────────────────────────────────── */
+    .app-header {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+
+    .app-header h1 {
+      font-size: clamp(1.5rem, 4vw, 2rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .app-header p {
+      margin-top: 8px;
+      color: var(--color-text-muted);
+      font-size: 0.95rem;
+    }
+
+    /* ─── Controls Panel ─────────────────────────────────────────────────── */
+    .controls-panel {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+
+    .control-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .control-row label {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--color-text-muted);
+      white-space: nowrap;
+      min-width: 76px;
+    }
+
+    select {
+      flex: 1;
+      min-width: 130px;
+      /* Minimum 44px height for phone tap targets */
+      min-height: var(--touch-target);
+      padding: 10px 14px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      font-family: var(--font-sans);
+      font-size: 1rem;   /* 1rem (not 0.875) prevents iOS auto-zoom on focus */
+      color: var(--color-text);
+      background: var(--color-bg);
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2378716c' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      padding-right: 32px;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+    }
+
+    /* ─── Buttons — all buttons meet 44px touch target ───────────────────── */
+    .btn-primary {
+      min-height: var(--touch-target);
+      padding: 0 24px;
+      background: var(--color-primary);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-sans);
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      white-space: nowrap;
+      /* Full width on very small screens */
+      width: 100%;
+    }
+
+    @media (min-width: 400px) {
+      .btn-primary { width: auto; }
+    }
+
+    .btn-primary:hover:not(:disabled) { background: var(--color-primary-hover); }
+    .btn-primary:active:not(:disabled) { transform: scale(0.98); }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    /* ─── Progress & Quiz Status Row ─────────────────────────────────────── */
+    .status-row {
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .status-row.visible { display: flex; }
+
+    @media (min-width: 500px) {
+      .status-row { flex-direction: row; align-items: center; }
+    }
+
+    .progress-pill {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+    }
+
+    .progress-label {
+      font-size: 0.875rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .progress-track {
+      flex: 1;
+      height: 8px;
+      background: var(--color-border);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--color-learned);
+      border-radius: 99px;
+      transition: width 0.3s ease;
+      width: 0%;
+    }
+
+    .btn-quiz {
+      min-height: var(--touch-target);
+      padding: 0 18px;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-sans);
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      border: 1.5px solid var(--color-border);
+      background: var(--color-surface);
+      color: var(--color-text-muted);
+      white-space: nowrap;
+      width: 100%;
+    }
+
+    @media (min-width: 500px) {
+      .btn-quiz { width: auto; }
+    }
+
+    .btn-quiz:hover {
+      border-color: var(--color-quiz);
+      color: var(--color-quiz);
+      background: var(--color-quiz-bg);
+    }
+
+    .btn-quiz.active {
+      border-color: var(--color-quiz);
+      background: var(--color-quiz-bg);
+      color: var(--color-quiz);
+    }
+
+    /* ─── Lookup Section ─────────────────────────────────────────────────── */
+    .lookup-section {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .lookup-section h2 {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--color-text-muted);
+      margin-bottom: 12px;
+    }
+
+    .lookup-input-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .lookup-input-row input[type="text"] {
+      flex: 1;
+      min-width: 160px;
+      /* 1rem font-size prevents iOS auto-zoom on focus */
+      font-size: 1rem;
+      min-height: var(--touch-target);
+      padding: 10px 14px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      font-family: var(--font-sans);
+      color: var(--color-text);
+      background: var(--color-bg);
+      transition: border-color 0.15s;
+    }
+
+    .lookup-input-row input[type="text"]:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+    }
+
+    .lookup-input-row input[type="text"]::placeholder {
+      color: var(--color-text-muted);
+    }
+
+    .lookup-result {
+      display: none;
+      margin-top: 16px;
+      padding: 16px;
+      background: var(--color-lookup-bg);
+      border: 1px solid var(--color-lookup-border);
+      border-radius: var(--radius-sm);
+    }
+
+    .lookup-result.visible { display: block; }
+
+    .lookup-result-word {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--color-primary);
+      margin-bottom: 8px;
+    }
+
+    .lookup-field {
+      font-size: 0.875rem;
+      margin-bottom: 6px;
+      line-height: 1.5;
+    }
+
+    .lookup-field strong { color: var(--color-text); font-weight: 600; }
+    .lookup-field span   { color: var(--color-text-muted); }
+
+    .lookup-sentences {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--color-lookup-border);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .lookup-sentence {
+      font-size: 0.875rem;
+      font-style: italic;
+      color: var(--color-text-muted);
+    }
+
+    .lookup-loading {
+      display: none;
+      margin-top: 12px;
+      font-size: 0.875rem;
+      color: var(--color-text-muted);
+      align-items: center;
+      gap: 8px;
+    }
+
+    .lookup-loading.visible { display: flex; }
+
+    .lookup-error {
+      display: none;
+      margin-top: 12px;
+      font-size: 0.875rem;
+      color: var(--color-error);
+      padding: 10px 12px;
+      background: var(--color-error-bg);
+      border: 1px solid #fecaca;
+      border-radius: var(--radius-sm);
+    }
+
+    .lookup-error.visible { display: block; }
+
+    /* ─── Error Banner ────────────────────────────────────────────────────── */
+    .error-message {
+      display: none;
+      padding: 14px 16px;
+      background: var(--color-error-bg);
+      border: 1px solid #fecaca;
+      border-radius: var(--radius-sm);
+      color: var(--color-error);
+      font-size: 0.9rem;
+      margin-bottom: 20px;
+    }
+
+    .error-message.visible { display: block; }
+
+    /* ─── Loading Spinner ────────────────────────────────────────────────── */
+    .loading-indicator {
+      display: none;
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--color-text-muted);
+      font-size: 0.95rem;
+    }
+
+    .loading-indicator.visible { display: block; }
+
+    .spinner {
+      display: inline-block;
+      width: 28px;
+      height: 28px;
+      border: 3px solid var(--color-border);
+      border-top-color: var(--color-primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 12px;
+    }
+
+    .spinner-sm {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid var(--color-border);
+      border-top-color: var(--color-primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ─── Word Cards Grid ────────────────────────────────────────────────── */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    @media (min-width: 560px) {
+      .cards-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    /* ─── Word Card ──────────────────────────────────────────────────────── */
+    .word-card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: border-color 0.2s, background 0.2s;
+      position: relative;
+    }
+
+    .word-card.learned {
+      background: var(--color-learned-bg);
+      border-color: var(--color-learned-border);
+    }
+
+    .word-card.learned .card-word { color: var(--color-learned); }
+
+    .learned-badge {
+      display: none;
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      width: 26px;
+      height: 26px;
+      background: var(--color-learned);
+      border-radius: 50%;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .word-card.learned .learned-badge { display: flex; }
+
+    .learned-badge svg {
+      width: 14px;
+      height: 14px;
+      stroke: #fff;
+      stroke-width: 2.5;
+    }
+
+    .card-word {
+      font-size: clamp(1.2rem, 4vw, 1.4rem);
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--color-primary);
+      line-height: 1.2;
+      padding-right: 36px;
+    }
+
+    .card-translation {
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--color-text);
+    }
+
+    .card-translation span {
+      color: var(--color-text-muted);
+      font-weight: 400;
+    }
+
+    .card-sentence {
+      font-size: 0.875rem;
+      color: var(--color-text-muted);
+      font-style: italic;
+      line-height: 1.5;
+      border-top: 1px solid var(--color-border);
+      padding-top: 10px;
+      flex: 1;
+    }
+
+    /* ─── Quiz Mode ──────────────────────────────────────────────────────── */
+    .quiz-active .word-card .card-translation { display: none; }
+
+    .btn-reveal {
+      display: none;
+      min-height: var(--touch-target);
+      padding: 0 14px;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-sans);
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1.5px solid var(--color-quiz-border);
+      background: var(--color-quiz-bg);
+      color: var(--color-quiz);
+      text-align: center;
+      transition: background 0.15s;
+    }
+
+    .quiz-active .btn-reveal { display: flex; align-items: center; justify-content: center; }
+    .btn-reveal:hover { background: #fde68a; }
+
+    .quiz-active .word-card.revealed .card-translation { display: block; }
+    .quiz-active .word-card.revealed .btn-reveal { display: none; }
+
+    /* ─── Mark as Learned Button ─────────────────────────────────────────── */
+    .btn-learned {
+      min-height: var(--touch-target);
+      padding: 0 14px;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-sans);
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      border: 1.5px solid var(--color-border);
+      background: transparent;
+      color: var(--color-text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-learned:hover {
+      border-color: var(--color-learned);
+      color: var(--color-learned);
+      background: var(--color-learned-bg);
+    }
+
+    .word-card.learned .btn-learned {
+      border-color: var(--color-learned);
+      color: var(--color-learned);
+      background: #dcfce7;
+    }
+
+    .word-card.learned .btn-learned:hover { background: #bbf7d0; }
+
+    /* ─── Empty State ────────────────────────────────────────────────────── */
+    .empty-state {
+      text-align: center;
+      padding: 56px 24px;
+      color: var(--color-text-muted);
+    }
+
+    .empty-state .empty-icon {
+      font-size: 2.5rem;
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    .empty-state p { font-size: 0.95rem; }
+  </style>
+</head>
+
+<body>
+  <div class="app-wrapper">
+
+    <!-- Header -->
+    <header class="app-header">
+      <h1>Vocab Builder</h1>
+      <p>AI-powered vocabulary cards for language learners</p>
+    </header>
+
+    <!-- Controls -->
+    <section class="controls-panel" aria-label="Word settings">
+      <div class="control-row">
+        <label for="language-select">Language</label>
+        <select id="language-select" aria-label="Choose a language">
+          <option value="Spanish">Spanish</option>
+          <option value="French">French</option>
+          <option value="Japanese">Japanese</option>
+          <option value="German">German</option>
+          <option value="Portuguese">Portuguese</option>
+        </select>
+      </div>
+      <div class="control-row">
+        <label for="difficulty-select">Difficulty</label>
+        <select id="difficulty-select" aria-label="Choose a difficulty level">
+          <option value="Beginner" selected>Beginner</option>
+          <option value="Intermediate">Intermediate</option>
+          <option value="Advanced">Advanced</option>
+        </select>
+        <button class="btn-primary" id="fetch-btn">Get New Words</button>
+      </div>
+    </section>
+
+    <!-- Custom Word Lookup -->
+    <section class="lookup-section" aria-label="Custom word lookup">
+      <h2>Look Up a Word</h2>
+      <div class="lookup-input-row">
+        <input
+          type="text"
+          id="lookup-input"
+          placeholder="Type any word or phrase…"
+          aria-label="Word or phrase to look up"
+          maxlength="200"
+        />
+        <button class="btn-primary" id="lookup-btn">Look Up</button>
+      </div>
+
+      <div class="lookup-loading" id="lookup-loading" aria-live="polite">
+        <div class="spinner-sm"></div>
+        <span>Looking up&hellip;</span>
+      </div>
+
+      <div class="lookup-error" id="lookup-error" role="alert"></div>
+
+      <div class="lookup-result" id="lookup-result" aria-live="polite">
+        <div class="lookup-result-word" id="lookup-result-word"></div>
+        <div class="lookup-field">
+          <strong>Translation:</strong> <span id="lookup-translation"></span>
+        </div>
+        <div class="lookup-field">
+          <strong>Pronunciation tip:</strong> <span id="lookup-pronunciation"></span>
+        </div>
+        <div class="lookup-sentences" id="lookup-sentences"></div>
+      </div>
+    </section>
+
+    <!-- Progress + Quiz Mode row -->
+    <div class="status-row" id="status-row">
+      <div class="progress-pill">
+        <span class="progress-label" id="progress-label">0 / 5 learned</span>
+        <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="5" aria-valuenow="0" id="progress-track">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+      </div>
+      <button class="btn-quiz" id="quiz-btn" aria-pressed="false">Quiz Mode</button>
+    </div>
+
+    <!-- Main fetch error -->
+    <div class="error-message" id="error-message" role="alert" aria-live="assertive"></div>
+
+    <!-- Loading spinner -->
+    <div class="loading-indicator" id="loading-indicator">
+      <div class="spinner"></div>
+      <p>Fetching vocabulary words&hellip;</p>
+    </div>
+
+    <!-- Word cards -->
+    <main id="cards-container">
+      <div class="empty-state" id="empty-state">
+        <span class="empty-icon">📚</span>
+        <p>Pick a language and difficulty above, then click <strong>Get New Words</strong> to start learning.</p>
+      </div>
+    </main>
+
+  </div>
+
+  <script>
+    // ─── State ─────────────────────────────────────────────────────────────
+    let currentWords = [];
+    let learnedSet   = new Set();
+    let quizMode     = false;
+
+    // ─── localStorage Keys ─────────────────────────────────────────────────
+    const KEY_WORDS      = 'vocabBuilder_words';
+    const KEY_LEARNED    = 'vocabBuilder_learned';
+    const KEY_LANG       = 'vocabBuilder_language';
+    const KEY_DIFFICULTY = 'vocabBuilder_difficulty';
+
+    // ─── DOM ───────────────────────────────────────────────────────────────
+    const languageSelect   = document.getElementById('language-select');
+    const difficultySelect = document.getElementById('difficulty-select');
+    const fetchBtn         = document.getElementById('fetch-btn');
+    const statusRow        = document.getElementById('status-row');
+    const progressLabel    = document.getElementById('progress-label');
+    const progressFill     = document.getElementById('progress-fill');
+    const progressTrack    = document.getElementById('progress-track');
+    const quizBtn          = document.getElementById('quiz-btn');
+    const errorMessage     = document.getElementById('error-message');
+    const loadingIndicator = document.getElementById('loading-indicator');
+    const cardsContainer   = document.getElementById('cards-container');
+    const emptyState       = document.getElementById('empty-state');
+    const lookupInput      = document.getElementById('lookup-input');
+    const lookupBtn        = document.getElementById('lookup-btn');
+    const lookupLoading    = document.getElementById('lookup-loading');
+    const lookupError      = document.getElementById('lookup-error');
+    const lookupResult     = document.getElementById('lookup-result');
+    const lookupResultWord = document.getElementById('lookup-result-word');
+    const lookupTranslation   = document.getElementById('lookup-translation');
+    const lookupPronunciation = document.getElementById('lookup-pronunciation');
+    const lookupSentences     = document.getElementById('lookup-sentences');
+
+    // ─── Init ──────────────────────────────────────────────────────────────
+    function init() {
+      const savedLang = localStorage.getItem(KEY_LANG);
+      const savedDiff = localStorage.getItem(KEY_DIFFICULTY);
+      if (savedLang) languageSelect.value = savedLang;
+      if (savedDiff) difficultySelect.value = savedDiff;
+
+      const savedWords   = localStorage.getItem(KEY_WORDS);
+      const savedLearned = localStorage.getItem(KEY_LEARNED);
+
+      if (savedWords) {
+        currentWords = JSON.parse(savedWords);
+        learnedSet   = new Set(savedLearned ? JSON.parse(savedLearned) : []);
+        renderCards();
+        updateProgress();
+      }
+    }
+
+    // ─── Persist ───────────────────────────────────────────────────────────
+    function persistState() {
+      localStorage.setItem(KEY_WORDS,      JSON.stringify(currentWords));
+      localStorage.setItem(KEY_LEARNED,    JSON.stringify([...learnedSet]));
+      localStorage.setItem(KEY_LANG,       languageSelect.value);
+      localStorage.setItem(KEY_DIFFICULTY, difficultySelect.value);
+    }
+
+    // ─── Fetch Words ───────────────────────────────────────────────────────
+    async function fetchWords() {
+      setLoading(true);
+      hideError();
+
+      try {
+        const response = await fetch('/api/words', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            language:   languageSelect.value,
+            difficulty: difficultySelect.value
+          })
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Something went wrong. Please try again.');
+
+        currentWords = data.words;
+        learnedSet   = new Set();
+        quizMode     = false;
+
+        persistState();
+        renderCards();
+        updateProgress();
+        updateQuizButton();
+
+      } catch (err) {
+        showError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    // ─── Lookup Word ───────────────────────────────────────────────────────
+    async function lookupWord() {
+      const query = lookupInput.value.trim();
+      if (!query) {
+        lookupError.textContent = 'Please type a word or phrase first.';
+        lookupError.classList.add('visible');
+        return;
+      }
+
+      lookupResult.classList.remove('visible');
+      lookupError.classList.remove('visible');
+      lookupLoading.classList.add('visible');
+      lookupBtn.disabled = true;
+
+      try {
+        const response = await fetch('/api/lookup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query, language: languageSelect.value })
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Something went wrong. Please try again.');
+
+        lookupResultWord.textContent    = `"${query}"`;
+        lookupTranslation.textContent   = data.translation;
+        lookupPronunciation.textContent = data.pronunciation;
+
+        lookupSentences.innerHTML = '';
+        if (Array.isArray(data.sentences)) {
+          data.sentences.forEach((sentence, i) => {
+            const div = document.createElement('div');
+            div.className = 'lookup-sentence';
+            div.textContent = `${i + 1}. "${sentence}"`;
+            lookupSentences.appendChild(div);
+          });
+        }
+
+        lookupResult.classList.add('visible');
+
+      } catch (err) {
+        lookupError.textContent = err.message;
+        lookupError.classList.add('visible');
+      } finally {
+        lookupLoading.classList.remove('visible');
+        lookupBtn.disabled = false;
+      }
+    }
+
+    // ─── Quiz Mode ─────────────────────────────────────────────────────────
+    function toggleQuizMode() {
+      quizMode = !quizMode;
+      cardsContainer.classList.toggle('quiz-active', quizMode);
+      if (!quizMode) {
+        cardsContainer.querySelectorAll('.word-card.revealed')
+          .forEach(card => card.classList.remove('revealed'));
+      }
+      updateQuizButton();
+    }
+
+    function updateQuizButton() {
+      quizBtn.classList.toggle('active', quizMode);
+      quizBtn.setAttribute('aria-pressed', quizMode.toString());
+      quizBtn.textContent = quizMode ? 'Exit Quiz Mode' : 'Quiz Mode';
+    }
+
+    // ─── Learned Toggle ────────────────────────────────────────────────────
+    function toggleLearned(index) {
+      if (learnedSet.has(index)) { learnedSet.delete(index); }
+      else { learnedSet.add(index); }
+      updateCardLearnedState(index);
+      updateProgress();
+      persistState();
+    }
+
+    function updateCardLearnedState(index) {
+      const card = cardsContainer.querySelector(`[data-index="${index}"]`);
+      if (!card) return;
+      const btn       = card.querySelector('.btn-learned');
+      const isLearned = learnedSet.has(index);
+      card.classList.toggle('learned', isLearned);
+      btn.textContent = isLearned ? 'Learned ✓' : 'Mark as Learned';
+      btn.setAttribute('aria-pressed', isLearned.toString());
+    }
+
+    // ─── Progress ──────────────────────────────────────────────────────────
+    function updateProgress() {
+      const count = learnedSet.size;
+      const total = currentWords.length;
+      progressLabel.textContent = `${count} / ${total} learned`;
+      progressFill.style.width  = total > 0 ? `${(count / total) * 100}%` : '0%';
+      progressTrack.setAttribute('aria-valuenow', count);
+    }
+
+    // ─── Render Cards ──────────────────────────────────────────────────────
+    function renderCards() {
+      emptyState.remove();
+      const grid = document.createElement('div');
+      grid.className = 'cards-grid';
+      currentWords.forEach((wordObj, i) => {
+        grid.appendChild(createCardElement(wordObj, i, learnedSet.has(i)));
+      });
+      cardsContainer.innerHTML = '';
+      if (quizMode) cardsContainer.classList.add('quiz-active');
+      cardsContainer.appendChild(grid);
+      statusRow.classList.add('visible');
+    }
+
+    function createCardElement(wordObj, index, isLearned) {
+      const card = document.createElement('article');
+      card.className = 'word-card' + (isLearned ? ' learned' : '');
+      card.setAttribute('data-index', index);
+
+      card.innerHTML = `
+        <div class="learned-badge" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+        <div class="card-word">${escapeHtml(wordObj.word)}</div>
+        <div class="card-translation">
+          <span>Translation: </span>${escapeHtml(wordObj.translation)}
+        </div>
+        <button class="btn-reveal" aria-label="Reveal translation for ${escapeHtml(wordObj.word)}">
+          Reveal Translation
+        </button>
+        <div class="card-sentence">"${escapeHtml(wordObj.sentence)}"</div>
+        <button
+          class="btn-learned"
+          aria-pressed="${isLearned}"
+          aria-label="Mark ${escapeHtml(wordObj.word)} as learned"
+        >${isLearned ? 'Learned ✓' : 'Mark as Learned'}</button>
+      `;
+
+      card.querySelector('.btn-learned').addEventListener('click', () => toggleLearned(index));
+      card.querySelector('.btn-reveal').addEventListener('click', () => card.classList.add('revealed'));
+
+      return card;
+    }
+
+    // ─── UI Helpers ────────────────────────────────────────────────────────
+    function setLoading(isLoading) {
+      fetchBtn.disabled    = isLoading;
+      fetchBtn.textContent = isLoading ? 'Loading…' : 'Get New Words';
+      loadingIndicator.classList.toggle('visible', isLoading);
+      const grid = cardsContainer.querySelector('.cards-grid');
+      if (grid) grid.style.opacity = isLoading ? '0.4' : '1';
+    }
+
+    function showError(msg) {
+      errorMessage.textContent = msg;
+      errorMessage.classList.add('visible');
+    }
+
+    function hideError() { errorMessage.classList.remove('visible'); }
+
+    function escapeHtml(str) {
+      const d = document.createElement('div');
+      d.appendChild(document.createTextNode(String(str)));
+      return d.innerHTML;
+    }
+
+    // ─── Events ────────────────────────────────────────────────────────────
+    fetchBtn.addEventListener('click', fetchWords);
+    quizBtn.addEventListener('click', toggleQuizMode);
+    lookupBtn.addEventListener('click', lookupWord);
+    lookupInput.addEventListener('keydown', e => { if (e.key === 'Enter') lookupWord(); });
+    languageSelect.addEventListener('change', () => localStorage.setItem(KEY_LANG, languageSelect.value));
+    difficultySelect.addEventListener('change', () => localStorage.setItem(KEY_DIFFICULTY, difficultySelect.value));
+
+    // ─── Boot ──────────────────────────────────────────────────────────────
+    init();
+  </script>
+</body>
+</html>

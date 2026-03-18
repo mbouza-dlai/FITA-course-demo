@@ -1,0 +1,69 @@
+{
+  "app_name": "Flashcards",
+  "module": 1,
+  "role": "throughline",
+  "videos_covered": [
+    "M1V1", "M1V2", "M1V3", "M1V4", "M1V5",
+    "M2V1", "M2V2", "M2V3",
+    "M3V1", "M3V2", "M3V3", "M3V4"
+  ],
+  "primary_concept": "Incremental app development — starting from a no-persistence MVP and evolving the same app across three modules to add persistence and then AI-powered features",
+  "secondary_concepts": [
+    "Writing a structured PRD before prompting",
+    "Scoping an MVP vs. full feature set",
+    "Phase-based building to avoid context rot",
+    "Saving work at stable checkpoints (versioning)",
+    "Debugging at the cosmetic, functional, and catastrophic levels",
+    "localStorage for single-device persistence",
+    "JSON file persistence for portable data",
+    "Supabase database for multi-user scenarios",
+    "Integrating a free external API",
+    "Integrating an LLM API to generate flashcard content",
+    "API key security and cost guardrails"
+  ],
+  "tech_constraints": {
+    "allowed_persistence": ["none", "localStorage", "json-file", "supabase"],
+    "allowed_apis": ["none", "free-external", "paid-external", "llm"],
+    "deployment_required": true,
+    "max_phases": 3
+  },
+  "mvp_features": [
+    "Add a flashcard with a front (question) and back (answer)",
+    "Flip a card to reveal the answer",
+    "Navigate forward and backward through the card deck",
+    "Delete a card from the deck",
+    "Display total card count and current position in the deck"
+  ],
+  "stretch_features": [
+    "Persist cards using localStorage so the deck survives a page refresh (Module 2)",
+    "Save and load cards from a JSON file for portability across devices (Module 2)",
+    "Connect to a Supabase database to enable multi-device access (Module 2)",
+    "Generate flashcard content automatically using an LLM API (Module 3)",
+    "Allow the learner to specify a topic and have the LLM produce a ready-made deck (Module 3)",
+    "Track which cards have been marked as known vs. still learning (Module 3 stretch)"
+  ],
+  "forbidden_features": [
+    "User accounts or login — requires authentication infrastructure beyond course scope",
+    "Sharing decks with other users — requires user identity and a multi-user database",
+    "Real-time sync across devices — requires a backend server beyond the course scope",
+    "Payment processing or premium deck purchases — explicitly flagged in Module 3 conclusion as beyond ceiling",
+    "Spaced repetition algorithm — complex stateful logic that obscures the persistence and API concepts being taught",
+    "Any external API in Module 1 — APIs are not introduced until Module 3",
+    "Any persistence mechanism in Module 1 — persistence is not introduced until Module 2"
+  ],
+  "learner_outcome": "Learners will be able to plan, build, and iteratively extend the Flashcards app from a zero-persistence MVP through adding localStorage and database persistence to integrating an LLM API that auto-generates card content, demonstrating a complete app development lifecycle.",
+  "instructor_talking_points": [
+    "In Module 1, show how writing a PRD first produces a cleaner initial prompt — contrast a vague prompt ('make me a flashcard app') with the structured version derived from the PRD.",
+    "When adding localStorage in Module 2, narrate the moment of refresh: show cards disappearing without persistence, then reappearing after — make the problem visceral before showing the fix.",
+    "When switching from localStorage to a JSON file in Module 2, explain the trade-off out loud: localStorage is tied to one browser on one device, while a JSON file travels with the app.",
+    "In Module 3, clearly distinguish between 'using an LLM to build the app' and 'using an LLM as a feature inside the app' — the LLM API call that generates flashcard content is the latter."
+  ],
+  "scope_warnings": [
+    "Adding a score or progress tracker that remembers history across sessions — this requires persistence and should not appear until Module 2.",
+    "Suggesting a spaced repetition system (like Anki) — the algorithm requires complex state management that will overwhelm both the learner and the coding agent in early phases.",
+    "Prompting the coding agent to 'make it shareable' — sharing requires user accounts, a multi-user database, and URL routing, which are all out of scope for this course.",
+    "Allowing the LLM to generate cards without any guardrails — in Module 3 this is the right moment to discuss prompt injection and API cost limits before wiring up the feature.",
+    "Asking for a leaderboard or competitive mode — leaderboards require user identity and a persistent score database, pulling in Module 2 and authentication concepts simultaneously.",
+    "Requesting an image or audio side to each card — binary media storage requires infrastructure (e.g., object storage buckets) not covered in any module."
+  ]
+}

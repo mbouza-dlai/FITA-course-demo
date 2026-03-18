@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trivia Game</title>
+  <style>
+    /* ── Design tokens ─────────────────────────────────────────── */
+    :root {
+      --bg:           #0f172a;
+      --surface:      #1e293b;
+      --surface-alt:  #334155;
+      --accent:       #6366f1;
+      --accent-hover: #818cf8;
+      --text:         #f1f5f9;
+      --text-muted:   #94a3b8;
+      --correct:      #22c55e;
+      --wrong:        #ef4444;
+      --timer-ok:     #6366f1;
+      --timer-warn:   #f59e0b;
+      --timer-danger: #ef4444;
+      --radius:       12px;
+      --radius-sm:    8px;
+      --shadow:       0 4px 24px rgba(0,0,0,0.4);
+      --transition:   0.18s ease;
+    }
+
+    /* ── Reset & base ──────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    /* ── Card wrapper ──────────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 40px 36px;
+      width: 100%;
+      max-width: 600px;
+    }
+
+    /* ── Typography ────────────────────────────────────────────── */
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--accent-hover);
+      margin-bottom: 6px;
+      text-align: center;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-bottom: 32px;
+    }
+
+    /* ── Best score badge on start screen ─────────────────────── */
+    .best-score-banner {
+      background: var(--surface-alt);
+      border-radius: var(--radius-sm);
+      padding: 12px 18px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .best-score-banner .label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+    }
+
+    .best-score-banner .value {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--accent-hover);
+    }
+
+    /* ── Form elements ─────────────────────────────────────────── */
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .field label {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    select {
+      background: var(--surface-alt);
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      font-size: 1rem;
+      font-family: inherit;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 40px;
+      transition: border-color var(--transition);
+    }
+
+    select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    /* ── Buttons ───────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px 28px;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 1rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background var(--transition), transform var(--transition);
+    }
+
+    .btn:active { transform: scale(0.98); }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      width: 100%;
+      font-size: 1.05rem;
+      margin-top: 8px;
+    }
+
+    .btn-primary:hover { background: var(--accent-hover); }
+
+    /* ── Game screen top bar ───────────────────────────────────── */
+    .game-top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    /* ── Timer ─────────────────────────────────────────────────── */
+    .timer {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .timer-circle {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: var(--surface-alt);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: var(--timer-ok);
+      border: 3px solid var(--timer-ok);
+      transition: color 0.4s, border-color 0.4s;
+    }
+
+    .timer-circle.warn   { color: var(--timer-warn);   border-color: var(--timer-warn); }
+    .timer-circle.danger { color: var(--timer-danger);  border-color: var(--timer-danger); }
+
+    /* ── Score badge ───────────────────────────────────────────── */
+    .score-badge {
+      background: var(--surface-alt);
+      border-radius: 99px;
+      padding: 6px 16px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--accent-hover);
+    }
+
+    /* ── Progress indicator ────────────────────────────────────── */
+    .progress-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .progress-bar-track {
+      height: 4px;
+      background: var(--surface-alt);
+      border-radius: 99px;
+      margin-bottom: 28px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 99px;
+      transition: width 0.3s ease;
+    }
+
+    /* ── Question text ─────────────────────────────────────────── */
+    .question-text {
+      font-size: 1.2rem;
+      font-weight: 600;
+      line-height: 1.6;
+      color: var(--text);
+      min-height: 80px;
+    }
+
+    /* ── Answer buttons ────────────────────────────────────────── */
+    .answers-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 28px;
+    }
+
+    .answer-btn {
+      background: var(--surface-alt);
+      color: var(--text);
+      border: 2px solid transparent;
+      border-radius: var(--radius-sm);
+      padding: 16px 14px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      text-align: center;
+      line-height: 1.4;
+      transition: background var(--transition), border-color var(--transition), transform var(--transition);
+    }
+
+    .answer-btn:hover:not(:disabled) {
+      background: #3d4f6b;
+      border-color: var(--accent);
+    }
+
+    .answer-btn:active:not(:disabled) { transform: scale(0.98); }
+    .answer-btn:disabled { cursor: not-allowed; opacity: 0.85; }
+
+    .answer-btn.correct {
+      background: rgba(34,197,94,0.18);
+      border-color: var(--correct);
+      color: #86efac;
+    }
+
+    .answer-btn.wrong {
+      background: rgba(239,68,68,0.18);
+      border-color: var(--wrong);
+      color: #fca5a5;
+    }
+
+    /* ── Explanation text (shown after wrong answer) ───────────── */
+    .explanation {
+      margin-top: 16px;
+      padding: 12px 14px;
+      background: rgba(99,102,241,0.12);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* ── Results screen ────────────────────────────────────────── */
+    .results-score {
+      font-size: 3.5rem;
+      font-weight: 800;
+      color: var(--accent-hover);
+      text-align: center;
+      line-height: 1;
+      margin: 16px 0 4px;
+    }
+
+    .results-label {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 1rem;
+      margin-bottom: 24px;
+    }
+
+    .high-score-note {
+      text-align: center;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #fbbf24;
+      margin-bottom: 24px;
+      min-height: 1.4em;
+    }
+
+    /* ── Recent scores list ────────────────────────────────────── */
+    .recent-scores-section {
+      margin-bottom: 28px;
+    }
+
+    .recent-scores-section h3 {
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .recent-scores-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .recent-scores-list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--surface-alt);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      font-size: 0.9rem;
+    }
+
+    .recent-scores-list li .score-val {
+      font-weight: 700;
+      color: var(--accent-hover);
+    }
+
+    .recent-scores-list li .score-date {
+      color: var(--text-muted);
+      font-size: 0.82rem;
+    }
+
+    /* ── Error screen ──────────────────────────────────────────── */
+    .error-icon {
+      font-size: 3rem;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .error-message {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 1rem;
+      line-height: 1.7;
+      margin-bottom: 28px;
+    }
+
+    /* ── Divider ───────────────────────────────────────────────── */
+    .divider {
+      border: none;
+      border-top: 1px solid rgba(255,255,255,0.07);
+      margin: 20px 0;
+    }
+
+    /* ── Utility ───────────────────────────────────────────────── */
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SCREEN 1 — Start
+  ══════════════════════════════════════════════════════════════ -->
+  <div id="screen-start" class="card">
+    <h1>Trivia Game</h1>
+    <p class="subtitle">Test your knowledge across categories</p>
+
+    <!-- All-time best score (from localStorage) -->
+    <div class="best-score-banner">
+      <span class="label">All-Time Best</span>
+      <span class="value" id="start-best-score">—</span>
+    </div>
+
+    <div class="field">
+      <label for="category-select">Category</label>
+      <select id="category-select">
+        <option value="9">General Knowledge</option>
+        <option value="17">Science &amp; Nature</option>
+        <option value="23">History</option>
+        <option value="21">Sports</option>
+        <option value="11">Film</option>
+        <option value="12">Music</option>
+        <option value="14">Television</option>
+        <option value="15">Video Games</option>
+        <option value="18">Computers</option>
+        <option value="22">Geography</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="difficulty-select">Difficulty</label>
+      <select id="difficulty-select">
+        <option value="easy">Easy</option>
+        <option value="medium" selected>Medium</option>
+        <option value="hard">Hard</option>
+      </select>
+    </div>
+
+    <button id="start-btn" class="btn btn-primary">Start Game</button>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SCREEN 2 — Game
+  ══════════════════════════════════════════════════════════════ -->
+  <div id="screen-game" class="card hidden">
+    <div class="game-top-bar">
+      <!-- Countdown timer -->
+      <div class="timer">
+        <div class="timer-circle" id="timer-circle">15</div>
+      </div>
+      <!-- Live score -->
+      <span class="score-badge">Score: <span id="score-display">0</span></span>
+    </div>
+
+    <p class="progress-label" id="progress-label">Question 1 of 10</p>
+    <div class="progress-bar-track">
+      <div class="progress-bar-fill" id="progress-fill" style="width: 10%"></div>
+    </div>
+
+    <p class="question-text" id="question-text">Loading question…</p>
+
+    <div class="answers-grid" id="answers-grid">
+      <!-- Answer buttons injected by JS -->
+    </div>
+
+    <!-- Explanation shown after a wrong answer (if available) -->
+    <div id="explanation-box" class="explanation hidden"></div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SCREEN 3 — Results
+  ══════════════════════════════════════════════════════════════ -->
+  <div id="screen-results" class="card hidden">
+    <h1>Game Over!</h1>
+    <p class="subtitle">Here is how you did</p>
+
+    <p class="results-score" id="final-score-display">0</p>
+    <p class="results-label">out of 10 correct</p>
+
+    <!-- New best score celebration message -->
+    <p class="high-score-note" id="high-score-note"></p>
+
+    <!-- All-time best score on results screen -->
+    <div class="best-score-banner" style="margin-bottom: 20px;">
+      <span class="label">All-Time Best</span>
+      <span class="value" id="results-best-score">—</span>
+    </div>
+
+    <!-- Last 5 recent scores -->
+    <div class="recent-scores-section" id="recent-scores-section">
+      <h3>Your Recent Scores</h3>
+      <ul class="recent-scores-list" id="recent-scores-list">
+        <!-- Injected by JS -->
+      </ul>
+    </div>
+
+    <button id="play-again-btn" class="btn btn-primary">Play Again</button>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SCREEN 4 — Error
+  ══════════════════════════════════════════════════════════════ -->
+  <div id="screen-error" class="card hidden">
+    <div class="error-icon">&#9888;</div>
+    <h1 style="margin-bottom: 16px;">Oops!</h1>
+    <p class="error-message">
+      We couldn't load questions right now — the trivia service may be temporarily unavailable.
+      Please try again in a moment.
+    </p>
+    <button id="retry-btn" class="btn btn-primary">Try Again</button>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       SCRIPT
+  ══════════════════════════════════════════════════════════════ -->
+  <script>
+    // ── localStorage keys ─────────────────────────────────────
+    const LS_BEST_SCORE    = 'trivia_best_score';
+    const LS_RECENT_SCORES = 'trivia_recent_scores';
+    const TIMER_SECONDS    = 15;
+
+    // ── Screen references ─────────────────────────────────────
+    const screens = {
+      start:   document.getElementById('screen-start'),
+      game:    document.getElementById('screen-game'),
+      results: document.getElementById('screen-results'),
+      error:   document.getElementById('screen-error'),
+    };
+
+    // ── UI element references ─────────────────────────────────
+    const categorySelect     = document.getElementById('category-select');
+    const difficultySelect   = document.getElementById('difficulty-select');
+    const startBtn           = document.getElementById('start-btn');
+    const playAgainBtn       = document.getElementById('play-again-btn');
+    const retryBtn           = document.getElementById('retry-btn');
+    const scoreDisplay       = document.getElementById('score-display');
+    const progressLabel      = document.getElementById('progress-label');
+    const progressFill       = document.getElementById('progress-fill');
+    const questionText       = document.getElementById('question-text');
+    const answersGrid        = document.getElementById('answers-grid');
+    const explanationBox     = document.getElementById('explanation-box');
+    const timerCircle        = document.getElementById('timer-circle');
+    const finalScoreDisplay  = document.getElementById('final-score-display');
+    const highScoreNote      = document.getElementById('high-score-note');
+    const startBestScore     = document.getElementById('start-best-score');
+    const resultsBestScore   = document.getElementById('results-best-score');
+    const recentScoresList   = document.getElementById('recent-scores-list');
+
+    // ── Game state ────────────────────────────────────────────
+    let questions    = [];
+    let currentIndex = 0;
+    let playerScore  = 0;
+
+    // Timer state — timerInterval holds the setInterval reference so
+    // we can clear it when the player answers or the question advances.
+    let timerInterval  = null;
+    let timeRemaining  = TIMER_SECONDS;
+
+    // ── Utility: show one screen, hide the rest ───────────────
+    function showScreen(name) {
+      Object.values(screens).forEach(el => el.classList.add('hidden'));
+      screens[name].classList.remove('hidden');
+    }
+
+    // ── Utility: decode HTML entities from the OTDB API ───────
+    function decodeHTML(str) {
+      const el = document.createElement('textarea');
+      el.innerHTML = str;
+      return el.value;
+    }
+
+    // ── Utility: shuffle array in place (Fisher-Yates) ────────
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    // ── Utility: format a Date as a short string ──────────────
+    function formatDate(isoString) {
+      const d = new Date(isoString);
+      return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    // ── localStorage helpers ──────────────────────────────────
+
+    function getBestScore() {
+      return parseInt(localStorage.getItem(LS_BEST_SCORE) || '0', 10);
+    }
+
+    function saveBestScore(score) {
+      const current = getBestScore();
+      if (score > current) {
+        localStorage.setItem(LS_BEST_SCORE, String(score));
+      }
+    }
+
+    function getRecentScores() {
+      try {
+        return JSON.parse(localStorage.getItem(LS_RECENT_SCORES) || '[]');
+      } catch {
+        return [];
+      }
+    }
+
+    // Prepend the new score and keep only the last 5 entries
+    function saveRecentScore(score) {
+      const list = getRecentScores();
+      list.unshift({ score, date: new Date().toISOString() });
+      localStorage.setItem(LS_RECENT_SCORES, JSON.stringify(list.slice(0, 5)));
+    }
+
+    // ── Render best score wherever it appears ─────────────────
+    function renderBestScore() {
+      const best = getBestScore();
+      const display = best > 0 ? `${best} / 10` : '—';
+      startBestScore.textContent   = display;
+      resultsBestScore.textContent = display;
+    }
+
+    // ── Render the recent scores list on the results screen ───
+    function renderRecentScores() {
+      const list = getRecentScores();
+      if (list.length === 0) {
+        recentScoresList.innerHTML = '<li style="color: var(--text-muted); font-size:0.9rem;">No scores yet — play a game!</li>';
+        return;
+      }
+      recentScoresList.innerHTML = list
+        .map(entry => `
+          <li>
+            <span class="score-val">${entry.score} / 10</span>
+            <span class="score-date">${formatDate(entry.date)}</span>
+          </li>
+        `)
+        .join('');
+    }
+
+    // ── Fetch questions from the Open Trivia Database ─────────
+    async function fetchQuestions(categoryId, difficulty) {
+      const url =
+        `https://opentdb.com/api.php?amount=10` +
+        `&category=${categoryId}` +
+        `&difficulty=${difficulty}` +
+        `&type=multiple`;
+
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error(`Network error — HTTP status ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.response_code !== 0) {
+        throw new Error(`API error — response_code ${data.response_code}`);
+      }
+
+      return data.results;
+    }
+
+    // ── Timer: start a 15-second countdown for current question
+    function startTimer() {
+      // Clear any leftover timer from a previous question
+      clearTimer();
+
+      timeRemaining = TIMER_SECONDS;
+      updateTimerDisplay();
+
+      timerInterval = setInterval(() => {
+        timeRemaining--;
+        updateTimerDisplay();
+
+        if (timeRemaining <= 0) {
+          // Time's up — treat as a wrong answer
+          clearTimer();
+          handleTimeUp();
+        }
+      }, 1000);
+    }
+
+    // ── Timer: stop and clear the interval ───────────────────
+    // FIX (2.4): This is called at the top of handleAnswer so the
+    // timer cannot fire again after the player has already clicked.
+    function clearTimer() {
+      if (timerInterval !== null) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+    }
+
+    // ── Timer: update the displayed number and color ──────────
+    function updateTimerDisplay() {
+      timerCircle.textContent = timeRemaining;
+      timerCircle.classList.remove('warn', 'danger');
+      if (timeRemaining <= 5)       timerCircle.classList.add('danger');
+      else if (timeRemaining <= 10) timerCircle.classList.add('warn');
+    }
+
+    // ── Timer ran out before the player clicked ───────────────
+    function handleTimeUp() {
+      const allBtns = answersGrid.querySelectorAll('.answer-btn');
+      allBtns.forEach(btn => { btn.disabled = true; });
+
+      // Find and highlight the correct button green
+      // We stored allAnswers on a data attribute for this purpose (see showQuestion)
+      const correctText = questions[currentIndex]
+        ? decodeHTML(questions[currentIndex].correct_answer)
+        : null;
+
+      if (correctText) {
+        allBtns.forEach(btn => {
+          if (btn.textContent === correctText) {
+            btn.classList.add('correct');
+          }
+        });
+      }
+
+      // No explanation needed for timeout (player didn't select a wrong answer)
+      setTimeout(() => {
+        currentIndex++;
+        if (currentIndex < questions.length) {
+          showQuestion();
+        } else {
+          showResults();
+        }
+      }, 1500);
+    }
+
+    // ── Begin a new game ──────────────────────────────────────
+    async function startGame() {
+      playerScore  = 0;
+      currentIndex = 0;
+      scoreDisplay.textContent = '0';
+
+      showScreen('game');
+      questionText.textContent = 'Loading questions…';
+      answersGrid.innerHTML    = '';
+      explanationBox.classList.add('hidden');
+
+      try {
+        questions = await fetchQuestions(
+          categorySelect.value,
+          difficultySelect.value
+        );
+        showQuestion();
+      } catch (err) {
+        console.error('Failed to load questions:', err);
+        showScreen('error');
+      }
+    }
+
+    // ── Render the current question ───────────────────────────
+    function showQuestion() {
+      const q = questions[currentIndex];
+      const questionNumber = currentIndex + 1;
+
+      // Hide any leftover explanation from previous question
+      explanationBox.classList.add('hidden');
+      explanationBox.textContent = '';
+
+      // Progress
+      progressLabel.textContent = `Question ${questionNumber} of ${questions.length}`;
+      progressFill.style.width  = `${(questionNumber / questions.length) * 100}%`;
+
+      // Question text
+      questionText.textContent = decodeHTML(q.question);
+
+      // Shuffle answers
+      const allAnswers = shuffle([
+        { text: decodeHTML(q.correct_answer), correct: true },
+        ...q.incorrect_answers.map(a => ({ text: decodeHTML(a), correct: false })),
+      ]);
+
+      // Build answer buttons
+      answersGrid.innerHTML = '';
+      allAnswers.forEach(answer => {
+        const btn       = document.createElement('button');
+        btn.className   = 'answer-btn';
+        btn.textContent = answer.text;
+
+        btn.addEventListener('click', () =>
+          handleAnswer(btn, answer.correct, allAnswers)
+        );
+
+        answersGrid.appendChild(btn);
+      });
+
+      // Start the countdown for this question
+      startTimer();
+    }
+
+    // ── Handle an answer selection ────────────────────────────
+    function handleAnswer(clickedBtn, isCorrect, allAnswers) {
+      // FIX (2.4): Stop the timer immediately when the player clicks.
+      // Without this, the timer would keep counting and could fire
+      // handleTimeUp while green/red feedback is still on screen.
+      clearTimer();
+
+      // Lock all buttons
+      const allBtns = answersGrid.querySelectorAll('.answer-btn');
+      allBtns.forEach(btn => { btn.disabled = true; });
+
+      if (isCorrect) {
+        clickedBtn.classList.add('correct');
+        playerScore++;
+        scoreDisplay.textContent = playerScore;
+      } else {
+        clickedBtn.classList.add('wrong');
+
+        // Reveal the correct answer
+        allBtns.forEach(btn => {
+          const match = allAnswers.find(a => a.text === btn.textContent);
+          if (match && match.correct) {
+            btn.classList.add('correct');
+          }
+        });
+
+        // Show explanation if the question has one.
+        // Note: The Open Trivia Database API does not include explanation text
+        // in its response. The `explanation` field on each question object is
+        // therefore always undefined. This block silently skips the explanation
+        // for every question, which is the correct behavior per Prompt 2.5:
+        // "if the API does not include an explanation, just skip it."
+        const q = questions[currentIndex];
+        const explanationText = q.explanation
+          ? decodeHTML(q.explanation)
+          : null;
+
+        if (explanationText) {
+          explanationBox.textContent = explanationText;
+          explanationBox.classList.remove('hidden');
+        }
+      }
+
+      // Advance after 1.5 s
+      setTimeout(() => {
+        currentIndex++;
+        if (currentIndex < questions.length) {
+          showQuestion();
+        } else {
+          showResults();
+        }
+      }, 1500);
+    }
+
+    // ── Show the results screen ───────────────────────────────
+    function showResults() {
+      clearTimer();
+
+      // Persist score
+      const previousBest = getBestScore();
+      saveRecentScore(playerScore);
+      saveBestScore(playerScore);
+
+      // Update UI
+      finalScoreDisplay.textContent = playerScore;
+
+      // Celebrate a new best score
+      if (playerScore > previousBest) {
+        highScoreNote.textContent = 'New all-time best score!';
+      } else {
+        highScoreNote.textContent = '';
+      }
+
+      renderBestScore();
+      renderRecentScores();
+      showScreen('results');
+    }
+
+    // ── Button event listeners ────────────────────────────────
+    startBtn.addEventListener('click', startGame);
+
+    playAgainBtn.addEventListener('click', () => {
+      renderBestScore();   // refresh in case it changed
+      showScreen('start');
+    });
+
+    retryBtn.addEventListener('click', () => showScreen('start'));
+
+    // ── Initialize on page load ───────────────────────────────
+    // Show the saved best score immediately when the page opens
+    renderBestScore();
+  </script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+# Never commit the .env file — it contains your secret API key
+.env
+
+# Node.js dependencies folder
+node_modules/
+
+# macOS system files
+.DS_Store

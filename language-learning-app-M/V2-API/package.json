@@ -1,0 +1,14 @@
+{
+  "name": "fita-app-demos",
+  "version": "1.0.0",
+  "description": "Language learning notes app with server-side vocabulary lookup",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "openai": "^6.27.0"
+  }
+}

@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Unit Converter MVP</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <h1>Unit Converter</h1>
+      <p class="subtitle">Simple, accurate conversions for distance, weight, and volume.</p>
+
+      <section class="converter-card" aria-label="Unit conversion form">
+        <div class="field">
+          <label for="sourceUnit">From</label>
+          <select id="sourceUnit" aria-label="Source unit"></select>
+        </div>
+
+        <div class="field">
+          <label for="targetUnit">To</label>
+          <select id="targetUnit" aria-label="Target unit"></select>
+        </div>
+
+        <div class="field">
+          <label for="inputValue">Value</label>
+          <input id="inputValue" type="number" step="any" placeholder="Enter a value" aria-label="Input value" />
+        </div>
+
+        <button id="convertBtn" type="button">Convert</button>
+
+        <div class="result" aria-live="polite">
+          <p id="resultText">Choose units and enter a value to convert.</p>
+        </div>
+      </section>
+    </main>
+
+    <script src="./src/app.js"></script>
+  </body>
+</html>

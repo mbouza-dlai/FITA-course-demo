@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Touch Typing Practice</title>
+  <style>
+    /* ── CSS Custom Properties ── */
+    :root {
+      --color-bg: #ffffff;
+      --color-text: #1a1a1a;
+      --color-muted: #888888;
+      --color-correct: #22a05a;
+      --color-wrong: #e63946;
+      --color-cursor-bg: #d0e8ff;
+      --color-cursor-border: #2277cc;
+      --color-btn-bg: #1a1a1a;
+      --color-btn-text: #ffffff;
+      --color-btn-hover: #333333;
+      --font-main: 'Georgia', serif;
+      --font-ui: system-ui, -apple-system, sans-serif;
+      --spacing-page: 48px;
+      --passage-size: 1.5rem;
+      --passage-line-height: 2.2rem;
+    }
+
+    /* ── Reset & Base ── */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--color-bg);
+      color: var(--color-text);
+      font-family: var(--font-ui);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--spacing-page);
+    }
+
+    /* ── Main Container ── */
+    #app {
+      width: 100%;
+      max-width: 720px;
+    }
+
+    /* ── Typing Screen ── */
+    #typing-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 32px;
+    }
+
+    /* Hidden input that captures keystrokes */
+    #hidden-input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+      width: 1px;
+      height: 1px;
+    }
+
+    /* The passage display */
+    #passage {
+      font-family: var(--font-main);
+      font-size: var(--passage-size);
+      line-height: var(--passage-line-height);
+      letter-spacing: 0.02em;
+      text-align: left;
+      width: 100%;
+      cursor: text;
+      user-select: none;
+    }
+
+    /* Individual character spans */
+    #passage span {
+      display: inline;
+      transition: color 0.05s;
+    }
+
+    /* Correct character */
+    #passage span.correct {
+      color: var(--color-correct);
+    }
+
+    /* Wrong character */
+    #passage span.wrong {
+      color: var(--color-wrong);
+    }
+
+    /* Current cursor position — blinking underline highlight */
+    #passage span.cursor {
+      background: var(--color-cursor-bg);
+      border-bottom: 3px solid var(--color-cursor-border);
+      animation: blink 1s step-start infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { background: var(--color-cursor-bg); }
+      50%       { background: #b3d4f7; }
+    }
+
+    /* ── Results Screen ── */
+    #results-screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 32px;
+      text-align: center;
+    }
+
+    #results-screen.visible {
+      display: flex;
+    }
+
+    .results-stats {
+      display: flex;
+      gap: 64px;
+      justify-content: center;
+    }
+
+    .stat {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .stat-value {
+      font-size: 3.5rem;
+      font-weight: 700;
+      line-height: 1;
+      color: var(--color-text);
+    }
+
+    .stat-label {
+      font-size: 0.875rem;
+      color: var(--color-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    /* ── Shared Button Style ── */
+    button {
+      background: var(--color-btn-bg);
+      color: var(--color-btn-text);
+      border: none;
+      border-radius: 8px;
+      padding: 14px 36px;
+      font-size: 1rem;
+      font-family: var(--font-ui);
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    button:hover {
+      background: var(--color-btn-hover);
+    }
+
+    /* Hint text shown below passage before typing starts */
+    #hint {
+      font-size: 0.875rem;
+      color: var(--color-muted);
+    }
+  </style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- Typing Screen -->
+  <div id="typing-screen">
+    <div id="passage" role="region" aria-label="Typing passage"></div>
+    <p id="hint">Click anywhere and start typing</p>
+    <!-- Hidden input to capture keystrokes on mobile / accessibility -->
+    <input id="hidden-input" type="text" autocomplete="off" autocorrect="off"
+           autocapitalize="off" spellcheck="false" aria-hidden="true" />
+  </div>
+
+  <!-- Results Screen (hidden until typing is complete) -->
+  <div id="results-screen" role="region" aria-label="Results">
+    <div class="results-stats">
+      <div class="stat">
+        <span class="stat-value" id="wpm-value">0</span>
+        <span class="stat-label">Words per Minute</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value" id="accuracy-value">0%</span>
+        <span class="stat-label">Accuracy</span>
+      </div>
+    </div>
+    <button id="try-again-btn">Try Again</button>
+  </div>
+
+</div>
+
+<script>
+  // ── Passage text ──
+  const PASSAGE = "The quick brown fox jumps over the lazy dog. Practice makes perfect, so keep your fingers on the home row and your eyes on the screen.";
+
+  // ── State ──
+  let startTime = null;       // timestamp of first keystroke (ms)
+  let currentIndex = 0;       // which character the user is about to type
+  let correctCount = 0;       // how many characters were typed correctly
+
+  // ── DOM references ──
+  const passageEl       = document.getElementById('passage');
+  const typingScreen    = document.getElementById('typing-screen');
+  const resultsScreen   = document.getElementById('results-screen');
+  const wpmValueEl      = document.getElementById('wpm-value');
+  const accuracyValueEl = document.getElementById('accuracy-value');
+  const tryAgainBtn     = document.getElementById('try-again-btn');
+  const hintEl          = document.getElementById('hint');
+  const hiddenInput     = document.getElementById('hidden-input');
+
+  // ── Build passage spans ──
+  // Each character becomes its own <span> so we can style it individually.
+  function buildPassage() {
+    passageEl.innerHTML = '';
+    for (let i = 0; i < PASSAGE.length; i++) {
+      const span = document.createElement('span');
+      // Use a non-breaking space so whitespace characters are visible/styleable
+      span.textContent = PASSAGE[i] === ' ' ? '\u00A0' : PASSAGE[i];
+      span.dataset.index = i;
+      passageEl.appendChild(span);
+    }
+    // Mark the first character as the cursor position
+    updateCursor();
+  }
+
+  // ── Highlight the current cursor character ──
+  function updateCursor() {
+    // Remove cursor class from all spans first
+    const spans = passageEl.querySelectorAll('span');
+    spans.forEach(s => s.classList.remove('cursor'));
+    // Add cursor to the current position (if not past the end)
+    if (currentIndex < PASSAGE.length) {
+      spans[currentIndex].classList.add('cursor');
+    }
+  }
+
+  // ── Handle a keystroke ──
+  function handleKey(key) {
+    // Ignore modifier-only or special keys
+    if (key.length !== 1) return;
+    // Do not allow typing past the end
+    if (currentIndex >= PASSAGE.length) return;
+
+    // Start timer on first keystroke
+    if (currentIndex === 0 && startTime === null) {
+      startTime = Date.now();
+      hintEl.style.visibility = 'hidden'; // hide hint once typing begins
+    }
+
+    const expected = PASSAGE[currentIndex];
+    const spans = passageEl.querySelectorAll('span');
+    const span = spans[currentIndex];
+
+    if (key === expected) {
+      span.classList.add('correct');
+      correctCount++;
+    } else {
+      span.classList.add('wrong');
+    }
+
+    span.classList.remove('cursor');
+    currentIndex++;
+
+    if (currentIndex < PASSAGE.length) {
+      updateCursor();
+    } else {
+      // Typing complete — show results
+      showResults();
+    }
+  }
+
+  // ── Calculate and display results ──
+  function showResults() {
+    const endTime = Date.now();
+    const elapsedMinutes = (endTime - startTime) / 1000 / 60;
+
+    // WPM: total chars / 5 / minutes
+    const wpm = Math.round((PASSAGE.length / 5) / elapsedMinutes);
+
+    // Accuracy: correctly typed chars / total chars
+    const accuracy = Math.round((correctCount / PASSAGE.length) * 100);
+
+    wpmValueEl.textContent   = wpm;
+    accuracyValueEl.textContent = accuracy + '%';
+
+    // Swap screens
+    typingScreen.style.display  = 'none';
+    resultsScreen.classList.add('visible');
+  }
+
+  // ── Reset everything to a clean initial state ──
+  function resetApp() {
+    // Clear all state variables
+    startTime    = null;
+    currentIndex = 0;
+    correctCount = 0;
+
+    // Rebuild the passage spans (removes all color classes)
+    buildPassage();
+
+    // Show hint again
+    hintEl.style.visibility = 'visible';
+
+    // Swap screens back
+    resultsScreen.classList.remove('visible');
+    typingScreen.style.display = 'flex';
+
+    // Focus the hidden input so keypresses are captured immediately
+    hiddenInput.value = '';
+    hiddenInput.focus();
+  }
+
+  // ── Event: keydown on document ──
+  // We listen on document so the user doesn't have to click anything first.
+  document.addEventListener('keydown', function(e) {
+    // Only handle when the typing screen is visible
+    if (typingScreen.style.display === 'none') return;
+
+    // Prevent default for space so the page doesn't scroll
+    if (e.key === ' ') e.preventDefault();
+
+    handleKey(e.key);
+  });
+
+  // ── Event: clicking the passage area focuses hidden input (mobile) ──
+  passageEl.addEventListener('click', function() {
+    hiddenInput.focus();
+  });
+
+  // ── Event: Try Again button ──
+  tryAgainBtn.addEventListener('click', resetApp);
+
+  // ── Initialize ──
+  buildPassage();
+</script>
+</body>
+</html>

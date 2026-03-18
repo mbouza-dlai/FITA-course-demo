@@ -1,0 +1,55 @@
+{
+  "app_name": "Language Learning App",
+  "module": 3,
+  "role": "capstone",
+  "videos_covered": ["3.1", "3.2", "3.3", "3.4", "3.5"],
+  "primary_concept": "Integrating an LLM API to generate dynamic, personalized language learning content",
+  "secondary_concepts": [
+    "Free vs. paid API tradeoffs and cost awareness",
+    "API key security and safe storage",
+    "Persisting user vocabulary progress with localStorage or a JSON file",
+    "Combining persistence and external APIs in a single app",
+    "Scoping an LLM-powered feature to avoid runaway costs"
+  ],
+  "tech_constraints": {
+    "allowed_persistence": ["localStorage", "json-file"],
+    "allowed_apis": ["free-external", "llm"],
+    "deployment_required": true,
+    "max_phases": 3
+  },
+  "mvp_features": [
+    "User selects a target language from a fixed list (e.g., Spanish, French, Japanese)",
+    "App calls an LLM API to fetch 5 vocabulary words with translations and example sentences for the chosen language",
+    "Each word is displayed as a card showing the word, translation, and one example sentence",
+    "User can mark a word as learned, and that status persists across page refreshes using localStorage",
+    "A simple progress indicator shows how many words have been marked as learned"
+  ],
+  "stretch_features": [
+    "Daily word rotation: a new set of 5 words is served each day, with previous days' words accessible in a history view",
+    "User can type in a custom word or phrase and ask the LLM for its translation, pronunciation tip, and two example sentences",
+    "Difficulty filter: user can request beginner, intermediate, or advanced vocabulary",
+    "Quiz mode: hide the translation and let the user guess before revealing the answer"
+  ],
+  "forbidden_features": [
+    "User authentication or login systems — these require a database and back-end session management beyond the scope of this course",
+    "Payment processing or premium tier gating — explicitly identified in the course as a signal to bring in a developer",
+    "Multi-user data sharing or leaderboards — requires a full database and identity management",
+    "Building a custom translation model or fine-tuning — far beyond agentic-coding scope",
+    "Storing API keys in client-side code without environment variable protection — violates the API key security lesson",
+    "Automatic or scheduled server-side jobs (e.g., cron jobs to push daily words) — requires server infrastructure not covered in the course"
+  ],
+  "learner_outcome": "Learners will be able to build and deploy the Language Learning App, demonstrating that they can wire an LLM API into a functional web app, protect their API key, and persist user progress — combining every skill from all three modules into a single shipped project.",
+  "instructor_talking_points": [
+    "Show the PRD and phased plan before touching the coding agent — reinforce that upfront planning from Module 1 prevents scope creep even on an LLM-powered app",
+    "When adding the LLM API call, narrate the difference between using an LLM to build the app versus using an LLM as a live feature inside the app — a distinction introduced in Video 3.4",
+    "Demonstrate setting a spending limit or rate guard on the API key before running the app, making the cost and security lessons from Video 3.2 concrete and visible",
+    "After Phase 1 works, pause and save to version control before adding the daily word rotation stretch feature — reinforcing the save-before-big-changes habit from Module 1 Video 4"
+  ],
+  "scope_warnings": [
+    "Adding a login screen so each user has their own word list: this requires a full database and user authentication system — jump to this only after the course and with a developer",
+    "Asking the LLM to generate audio pronunciation for every word: text-to-speech APIs introduce a second paid API dependency and a new cost surface; save for a post-course enhancement",
+    "Building a spaced-repetition algorithm (like Anki): implementing SR scheduling logic is complex functional work that will overwhelm both the learner and the coding agent in a single session — keep progress tracking to a simple learned/not-learned toggle for Phase 1",
+    "Fetching words from a third-party dictionary API in addition to the LLM: chaining two external API calls in the same phase multiplies failure points and debugging complexity; introduce only in Phase 3 if at all",
+    "Deploying with a visible API key in the front-end code: tempting shortcut that contradicts the security lesson — the instructor must explicitly show environment variable or server-side proxy setup before deploying"
+  ]
+}

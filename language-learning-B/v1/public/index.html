@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vocab Builder — Language Learning App</title>
+
+  <style>
+    /* ─── Design Tokens ─────────────────────────────────────────────────── */
+    :root {
+      --color-bg:          #f5f4f0;
+      --color-surface:     #ffffff;
+      --color-border:      #e2e0da;
+      --color-primary:     #4f46e5;       /* indigo */
+      --color-primary-hover: #4338ca;
+      --color-learned:     #16a34a;       /* green */
+      --color-learned-bg:  #f0fdf4;
+      --color-learned-border: #bbf7d0;
+      --color-text:        #1c1917;
+      --color-text-muted:  #78716c;
+      --color-error:       #dc2626;
+      --color-error-bg:    #fef2f2;
+
+      --radius:            12px;
+      --radius-sm:         8px;
+      --shadow:            0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.05);
+      --shadow-card:       0 2px 8px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+
+      --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    /* ─── Reset & Base ───────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-bg);
+      color: var(--color-text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ─── Layout ─────────────────────────────────────────────────────────── */
+    .app-wrapper {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 32px 16px 64px;
+    }
+
+    /* ─── Header ─────────────────────────────────────────────────────────── */
+    .app-header {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+
+    .app-header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--color-text);
+    }
+
+    .app-header p {
+      margin-top: 8px;
+      color: var(--color-text-muted);
+      font-size: 0.95rem;
+    }
+
+    /* ─── Controls Panel ─────────────────────────────────────────────────── */
+    .controls-panel {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .control-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .control-row label {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--color-text-muted);
+      white-space: nowrap;
+      min-width: 80px;
+    }
+
+    select {
+      flex: 1;
+      min-width: 160px;
+      padding: 10px 14px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      font-family: var(--font-sans);
+      font-size: 0.95rem;
+      color: var(--color-text);
+      background: var(--color-bg);
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2378716c' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      padding-right: 32px;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+    }
+
+    .btn-primary {
+      padding: 11px 24px;
+      background: var(--color-primary);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-sans);
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      white-space: nowrap;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--color-primary-hover);
+    }
+
+    .btn-primary:active:not(:disabled) {
+      transform: scale(0.98);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* ─── Progress Bar ───────────────────────────────────────────────────── */
+    .progress-section {
+      display: none; /* shown only when cards are present */
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding: 12px 16px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+    }
+
+    .progress-section.visible {
+      display: flex;
+    }
+
+    .progress-label {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--color-text);
+      white-space: nowrap;
+    }
+
+    .progress-track {
+      flex: 1;
+      height: 8px;
+      background: var(--color-border);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--color-learned);
+      border-radius: 99px;
+      transition: width 0.3s ease;
+      width: 0%;
+    }
+
+    /* ─── Error Message ──────────────────────────────────────────────────── */
+    .error-message {
+      display: none;
+      padding: 14px 16px;
+      background: var(--color-error-bg);
+      border: 1px solid #fecaca;
+      border-radius: var(--radius-sm);
+      color: var(--color-error);
+      font-size: 0.9rem;
+      margin-bottom: 20px;
+    }
+
+    .error-message.visible {
+      display: block;
+    }
+
+    /* ─── Loading State ──────────────────────────────────────────────────── */
+    .loading-indicator {
+      display: none;
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--color-text-muted);
+      font-size: 0.95rem;
+    }
+
+    .loading-indicator.visible {
+      display: block;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      border: 3px solid var(--color-border);
+      border-top-color: var(--color-primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 12px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ─── Word Cards Grid ────────────────────────────────────────────────── */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    @media (min-width: 560px) {
+      .cards-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    /* ─── Word Card ──────────────────────────────────────────────────────── */
+    .word-card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+      position: relative;
+    }
+
+    /* Learned state styling */
+    .word-card.learned {
+      background: var(--color-learned-bg);
+      border-color: var(--color-learned-border);
+    }
+
+    .word-card.learned .card-word {
+      color: var(--color-learned);
+    }
+
+    /* Checkmark badge shown when learned */
+    .learned-badge {
+      display: none;
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      width: 24px;
+      height: 24px;
+      background: var(--color-learned);
+      border-radius: 50%;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .word-card.learned .learned-badge {
+      display: flex;
+    }
+
+    .learned-badge svg {
+      width: 13px;
+      height: 13px;
+      stroke: #fff;
+      stroke-width: 2.5;
+    }
+
+    .card-word {
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--color-primary);
+      line-height: 1.2;
+      padding-right: 32px; /* space for badge */
+    }
+
+    .card-translation {
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--color-text);
+    }
+
+    .card-translation span {
+      color: var(--color-text-muted);
+      font-weight: 400;
+    }
+
+    .card-sentence {
+      font-size: 0.875rem;
+      color: var(--color-text-muted);
+      font-style: italic;
+      line-height: 1.5;
+      border-top: 1px solid var(--color-border);
+      padding-top: 10px;
+      flex: 1;
+    }
+
+    /* ─── Mark as Learned Button ─────────────────────────────────────────── */
+    .btn-learned {
+      margin-top: 4px;
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-sans);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      border: 1.5px solid var(--color-border);
+      background: transparent;
+      color: var(--color-text-muted);
+      text-align: center;
+    }
+
+    .btn-learned:hover {
+      border-color: var(--color-learned);
+      color: var(--color-learned);
+      background: var(--color-learned-bg);
+    }
+
+    .word-card.learned .btn-learned {
+      border-color: var(--color-learned);
+      color: var(--color-learned);
+      background: #dcfce7;
+    }
+
+    .word-card.learned .btn-learned:hover {
+      background: #bbf7d0;
+    }
+
+    /* ─── Empty State ────────────────────────────────────────────────────── */
+    .empty-state {
+      text-align: center;
+      padding: 56px 24px;
+      color: var(--color-text-muted);
+    }
+
+    .empty-state .empty-icon {
+      font-size: 2.5rem;
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    .empty-state p {
+      font-size: 0.95rem;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-wrapper">
+
+    <!-- Header -->
+    <header class="app-header">
+      <h1>Vocab Builder</h1>
+      <p>AI-powered vocabulary cards for language learners</p>
+    </header>
+
+    <!-- Controls: language picker + fetch button -->
+    <section class="controls-panel" aria-label="Word settings">
+      <div class="control-row">
+        <label for="language-select">Language</label>
+        <select id="language-select" aria-label="Choose a language">
+          <option value="Spanish">Spanish</option>
+          <option value="French">French</option>
+          <option value="Japanese">Japanese</option>
+          <option value="German">German</option>
+          <option value="Portuguese">Portuguese</option>
+        </select>
+        <button class="btn-primary" id="fetch-btn">Get New Words</button>
+      </div>
+    </section>
+
+    <!-- Progress indicator (hidden until cards load) -->
+    <div class="progress-section" id="progress-section" aria-live="polite">
+      <span class="progress-label" id="progress-label">0 / 5 learned</span>
+      <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="5" aria-valuenow="0" id="progress-track">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+    </div>
+
+    <!-- Error message (hidden by default) -->
+    <div class="error-message" id="error-message" role="alert" aria-live="assertive"></div>
+
+    <!-- Loading spinner (hidden by default) -->
+    <div class="loading-indicator" id="loading-indicator">
+      <div class="spinner"></div>
+      <p>Fetching vocabulary words&hellip;</p>
+    </div>
+
+    <!-- Word cards grid -->
+    <main id="cards-container">
+      <!-- Empty state shown before first fetch -->
+      <div class="empty-state" id="empty-state">
+        <span class="empty-icon">📚</span>
+        <p>Pick a language above and click <strong>Get New Words</strong> to start learning.</p>
+      </div>
+    </main>
+
+  </div>
+
+  <script>
+    // ─── App State ─────────────────────────────────────────────────────────
+    // currentWords holds the 5 word objects currently displayed:
+    // [{ word, translation, sentence }]
+    let currentWords = [];
+
+    // learnedSet tracks which word indices (0–4) the user has marked as learned.
+    // We use a Set for O(1) lookups.
+    let learnedSet = new Set();
+
+    // ─── localStorage Key ──────────────────────────────────────────────────
+    // We store state in localStorage under these keys so it survives refreshes.
+    const STORAGE_KEY_WORDS   = 'vocabBuilder_words';
+    const STORAGE_KEY_LEARNED = 'vocabBuilder_learned';
+    const STORAGE_KEY_LANG    = 'vocabBuilder_language';
+
+    // ─── DOM References ────────────────────────────────────────────────────
+    const languageSelect  = document.getElementById('language-select');
+    const fetchBtn        = document.getElementById('fetch-btn');
+    const progressSection = document.getElementById('progress-section');
+    const progressLabel   = document.getElementById('progress-label');
+    const progressFill    = document.getElementById('progress-fill');
+    const progressTrack   = document.getElementById('progress-track');
+    const errorMessage    = document.getElementById('error-message');
+    const loadingIndicator= document.getElementById('loading-indicator');
+    const cardsContainer  = document.getElementById('cards-container');
+    const emptyState      = document.getElementById('empty-state');
+
+    // ─── Initialise on Page Load ───────────────────────────────────────────
+    // Restore any previously saved words and learned status from localStorage.
+    function init() {
+      const savedLang = localStorage.getItem(STORAGE_KEY_LANG);
+      if (savedLang) {
+        languageSelect.value = savedLang;
+      }
+
+      const savedWords = localStorage.getItem(STORAGE_KEY_WORDS);
+      const savedLearned = localStorage.getItem(STORAGE_KEY_LEARNED);
+
+      if (savedWords) {
+        currentWords = JSON.parse(savedWords);
+        // Restore learned indices (stored as a JSON array of numbers)
+        learnedSet = new Set(savedLearned ? JSON.parse(savedLearned) : []);
+        renderCards();
+        updateProgress();
+      }
+    }
+
+    // ─── Save State to localStorage ───────────────────────────────────────
+    function persistState() {
+      localStorage.setItem(STORAGE_KEY_WORDS,   JSON.stringify(currentWords));
+      localStorage.setItem(STORAGE_KEY_LEARNED, JSON.stringify([...learnedSet]));
+      localStorage.setItem(STORAGE_KEY_LANG,    languageSelect.value);
+    }
+
+    // ─── Fetch Words from the Server ──────────────────────────────────────
+    // The server handles the actual OpenAI call — the API key never touches
+    // the browser.
+    async function fetchWords() {
+      const language = languageSelect.value;
+
+      setLoading(true);
+      hideError();
+
+      try {
+        const response = await fetch('/api/words', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ language })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Something went wrong. Please try again.');
+        }
+
+        // We have fresh words — reset learned state for this new batch
+        currentWords = data.words;
+        learnedSet   = new Set();
+
+        persistState();
+        renderCards();
+        updateProgress();
+
+      } catch (err) {
+        showError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    // ─── Toggle Learned State ─────────────────────────────────────────────
+    function toggleLearned(index) {
+      if (learnedSet.has(index)) {
+        learnedSet.delete(index);
+      } else {
+        learnedSet.add(index);
+      }
+
+      // Update the specific card's visual state
+      updateCardLearnedState(index);
+      updateProgress();
+      persistState();
+    }
+
+    // ─── Update a Single Card's Learned Styling ───────────────────────────
+    function updateCardLearnedState(index) {
+      const card = cardsContainer.querySelector(`[data-index="${index}"]`);
+      if (!card) return;
+
+      const btn = card.querySelector('.btn-learned');
+      const isLearned = learnedSet.has(index);
+
+      card.classList.toggle('learned', isLearned);
+      btn.textContent = isLearned ? 'Learned ✓' : 'Mark as Learned';
+      btn.setAttribute('aria-pressed', isLearned.toString());
+    }
+
+    // ─── Update Progress Indicator ────────────────────────────────────────
+    function updateProgress() {
+      const count = learnedSet.size;
+      const total = currentWords.length;
+
+      progressLabel.textContent = `${count} / ${total} learned`;
+      const pct = total > 0 ? (count / total) * 100 : 0;
+      progressFill.style.width = `${pct}%`;
+      progressTrack.setAttribute('aria-valuenow', count);
+    }
+
+    // ─── Render All Word Cards ────────────────────────────────────────────
+    function renderCards() {
+      // Remove empty state if present
+      emptyState.remove();
+
+      // Build the cards grid
+      const grid = document.createElement('div');
+      grid.className = 'cards-grid';
+
+      currentWords.forEach((wordObj, index) => {
+        const isLearned = learnedSet.has(index);
+        const card = createCardElement(wordObj, index, isLearned);
+        grid.appendChild(card);
+      });
+
+      // Replace whatever was in the container with the fresh grid
+      cardsContainer.innerHTML = '';
+      cardsContainer.appendChild(grid);
+
+      // Show the progress section now that cards are visible
+      progressSection.classList.add('visible');
+    }
+
+    // ─── Build a Single Card DOM Element ──────────────────────────────────
+    function createCardElement(wordObj, index, isLearned) {
+      const card = document.createElement('article');
+      card.className = 'word-card' + (isLearned ? ' learned' : '');
+      card.setAttribute('data-index', index);
+
+      card.innerHTML = `
+        <!-- Green checkmark badge, visible when learned -->
+        <div class="learned-badge" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+
+        <!-- Word in target language -->
+        <div class="card-word">${escapeHtml(wordObj.word)}</div>
+
+        <!-- English translation -->
+        <div class="card-translation">
+          <span>Translation: </span>${escapeHtml(wordObj.translation)}
+        </div>
+
+        <!-- Example sentence -->
+        <div class="card-sentence">"${escapeHtml(wordObj.sentence)}"</div>
+
+        <!-- Toggle learned button -->
+        <button
+          class="btn-learned"
+          aria-pressed="${isLearned}"
+          aria-label="Mark ${escapeHtml(wordObj.word)} as learned"
+        >${isLearned ? 'Learned ✓' : 'Mark as Learned'}</button>
+      `;
+
+      // Attach click handler to the button
+      card.querySelector('.btn-learned').addEventListener('click', () => {
+        toggleLearned(index);
+      });
+
+      return card;
+    }
+
+    // ─── UI State Helpers ──────────────────────────────────────────────────
+    function setLoading(isLoading) {
+      fetchBtn.disabled = isLoading;
+      fetchBtn.textContent = isLoading ? 'Loading…' : 'Get New Words';
+      loadingIndicator.classList.toggle('visible', isLoading);
+      if (isLoading) {
+        // Hide cards while loading so the spinner is clearly visible
+        const grid = cardsContainer.querySelector('.cards-grid');
+        if (grid) grid.style.opacity = '0.4';
+      } else {
+        const grid = cardsContainer.querySelector('.cards-grid');
+        if (grid) grid.style.opacity = '1';
+      }
+    }
+
+    function showError(message) {
+      errorMessage.textContent = message;
+      errorMessage.classList.add('visible');
+    }
+
+    function hideError() {
+      errorMessage.classList.remove('visible');
+    }
+
+    // ─── Security Helper: Escape HTML to prevent XSS ──────────────────────
+    // Even though this content comes from our own server, it's good practice
+    // to always escape dynamic content before inserting into the DOM.
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.appendChild(document.createTextNode(str));
+      return div.innerHTML;
+    }
+
+    // ─── Event Listeners ──────────────────────────────────────────────────
+    fetchBtn.addEventListener('click', fetchWords);
+
+    // Save the selected language when it changes
+    languageSelect.addEventListener('change', () => {
+      localStorage.setItem(STORAGE_KEY_LANG, languageSelect.value);
+    });
+
+    // ─── Boot ──────────────────────────────────────────────────────────────
+    init();
+  </script>
+</body>
+</html>

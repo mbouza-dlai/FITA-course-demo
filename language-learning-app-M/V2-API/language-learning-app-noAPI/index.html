@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Language Learning Notes</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="styles/style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>🌍 Language Learning Notes</h1>
+    <p class="subtitle">Build your vocabulary, track grammar, and collect phrases — one note at a time.</p>
+  </header>
+
+  <main class="app-main">
+
+    <!-- Tab Bar -->
+    <div class="tab-bar" role="tablist">
+      <button class="tab-btn active" role="tab" aria-selected="true"  data-tab="add-note"      id="tab-btn-add">Add / Edit Note</button>
+      <button class="tab-btn"        role="tab" aria-selected="false" data-tab="review-notes"  id="tab-btn-review">Review Notes</button>
+    </div>
+
+    <!-- ── Tab: Add / Edit Note ── -->
+    <div class="tab-panel" id="tab-add-note" role="tabpanel" aria-labelledby="tab-btn-add">
+      <section class="card form-card">
+        <form id="noteForm">
+          <input type="hidden" id="noteId" />
+
+          <div class="form-row">
+            <label for="languageSelect">Language</label>
+            <select id="languageSelect" required>
+              <option value="" disabled selected>Select language</option>
+              <option value="Portuguese">Portuguese</option>
+              <option value="Spanish">Spanish</option>
+              <option value="French">French</option>
+              <option value="German">German</option>
+              <option value="Italian">Italian</option>
+              <option value="English">English</option>
+              <option value="Other">Other…</option>
+            </select>
+            <input
+              type="text"
+              id="languageCustomInput"
+              class="hidden"
+              placeholder="Type language name…"
+              autocomplete="off"
+            />
+          </div>
+
+          <div class="form-row">
+            <label for="categorySelect">Category</label>
+            <select id="categorySelect" required>
+              <option value="" disabled selected>Select category</option>
+              <option value="Vocabulary">Vocabulary</option>
+              <option value="Verbs">Verbs</option>
+              <option value="Grammar">Grammar</option>
+              <option value="Phrases">Phrases</option>
+              <option value="General Notes">General Notes</option>
+            </select>
+          </div>
+
+          <!-- Title row — shown for non-vocabulary categories -->
+          <div class="form-row hidden" id="titleRow">
+            <label for="titleInput">Title</label>
+            <input
+              type="text"
+              id="titleInput"
+              placeholder="Give this note a title…"
+              autocomplete="off"
+            />
+          </div>
+
+          <!-- Vocabulary word lookup row — shown only when Vocabulary is selected -->
+          <div class="form-row word-lookup-row hidden" id="wordLookupRow">
+            <label for="lookupWordInput">Word</label>
+            <div class="word-lookup-input-group">
+              <input
+                type="text"
+                id="lookupWordInput"
+                placeholder="Enter a word to look up…"
+                autocomplete="off"
+              />
+              <button type="button" class="btn accent lookup-inline-btn" id="lookupInlineBtn">
+                Look up
+              </button>
+            </div>
+            <div id="lookupInlineStatus" class="lookup-inline-status" hidden></div>
+          </div>
+
+          <div class="form-row">
+            <label for="noteContent">Note</label>
+            <textarea
+              id="noteContent"
+              rows="4"
+              placeholder="Type your note here..."
+              required
+            ></textarea>
+          </div>
+
+          <div class="form-row">
+            <label for="tagsInput">Tags</label>
+            <input
+              id="tagsInput"
+              type="text"
+              placeholder="E.g. food, irregular, travel (separate with commas)"
+            />
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn primary" id="saveNoteBtn">Add Note</button>
+            <button type="button" class="btn ghost" id="cancelEditBtn" style="display:none">
+              Cancel Edit
+            </button>
+          </div>
+        </form>
+      </section>
+    </div>
+
+    <!-- ── Tab: Review Notes ── -->
+    <div class="tab-panel hidden" id="tab-review-notes" role="tabpanel" aria-labelledby="tab-btn-review">
+
+      <!-- Notes + inline filters -->
+      <section class="card notes-card">
+        <div class="notes-header">
+          <h2>Notes</h2>
+          <div class="filter-inline">
+            <input
+              id="searchInput"
+              type="text"
+              placeholder="Search…"
+            />
+            <select id="filterLanguage">
+              <option value="">All languages</option>
+              <option value="Portuguese">Portuguese</option>
+              <option value="Spanish">Spanish</option>
+              <option value="French">French</option>
+              <option value="German">German</option>
+              <option value="Italian">Italian</option>
+              <option value="English">English</option>
+              <option value="Other">Other</option>
+            </select>
+            <select id="filterCategory">
+              <option value="">All categories</option>
+              <option value="Vocabulary">Vocabulary</option>
+              <option value="Verbs">Verbs</option>
+              <option value="Grammar">Grammar</option>
+              <option value="Phrases">Phrases</option>
+              <option value="General Notes">General Notes</option>
+            </select>
+          </div>
+        </div>
+        <div id="notesContainer" class="notes-container">
+          <!-- Notes are rendered here by JavaScript -->
+        </div>
+      </section>
+
+      <!-- Export -->
+      <section class="card export-card">
+        <div class="export-actions">
+          <button id="exportAllBtn" class="btn primary">Export all</button>
+          <button id="exportSelectionBtn" class="btn secondary">Export selection</button>
+        </div>
+      </section>
+
+    </div><!-- /tab-review-notes -->
+
+  </main>
+
+  <script src="scripts/app.js"></script>
+</body>
+</html>

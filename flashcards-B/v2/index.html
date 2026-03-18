@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Flashcards</title>
+  <style>
+    /* ── Design tokens ── */
+    :root {
+      --bg:           #f0f4f8;
+      --card-bg:      #ffffff;
+      --primary:      #4f6ef7;
+      --primary-dark: #3a55d4;
+      --danger:       #e05252;
+      --danger-dark:  #c43d3d;
+      --success:      #38a169;
+      --success-dark: #2f855a;
+      --text:         #1a202c;
+      --text-muted:   #718096;
+      --border:       #e2e8f0;
+      --shadow:       0 4px 20px rgba(0, 0, 0, 0.10);
+      --radius:       12px;
+      --font:         'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    /* ── Reset & base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px 60px;
+    }
+
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 32px;
+      letter-spacing: -0.5px;
+    }
+
+    /* ── Add-card form ── */
+    .add-form {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 24px;
+      width: 100%;
+      max-width: 540px;
+      margin-bottom: 36px;
+    }
+
+    .add-form h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+      display: block;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: var(--font);
+      font-size: 0.95rem;
+      color: var(--text);
+      background: #fafafa;
+      transition: border-color 0.15s;
+      resize: vertical;
+    }
+
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      background: #fff;
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-family: var(--font);
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      user-select: none;
+    }
+
+    .btn:active { transform: scale(0.97); }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+    .btn-primary:hover { background: var(--primary-dark); }
+
+    .btn-secondary {
+      background: #e2e8f0;
+      color: var(--text);
+    }
+    .btn-secondary:hover { background: #cbd5e0; }
+
+    .btn-danger {
+      background: var(--danger);
+      color: #fff;
+    }
+    .btn-danger:hover { background: var(--danger-dark); }
+
+    .btn-success {
+      background: var(--success);
+      color: #fff;
+    }
+    .btn-success:hover { background: var(--success-dark); }
+
+    .btn-full { width: 100%; }
+
+    /* ── Flashcard area ── */
+    .card-area {
+      width: 100%;
+      max-width: 540px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+
+    /* 3-D flip container */
+    .card-scene {
+      width: 100%;
+      height: 220px;
+      perspective: 900px;
+      cursor: pointer;
+    }
+
+    .card-inner {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.42s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .card-inner.is-flipped {
+      transform: rotateY(180deg);
+    }
+
+    .card-face {
+      position: absolute;
+      inset: 0;
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+      gap: 10px;
+    }
+
+    .card-face.back {
+      transform: rotateY(180deg);
+      background: #f7f9ff;
+    }
+
+    .card-face-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+    }
+
+    .card-face-text {
+      font-size: 1.2rem;
+      font-weight: 500;
+      text-align: center;
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .empty-state {
+      width: 100%;
+      height: 220px;
+      background: var(--card-bg);
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      font-size: 1rem;
+      font-style: italic;
+      text-align: center;
+      padding: 24px;
+    }
+
+    /* ── Counter ── */
+    .card-counter {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    /* ── Navigation controls ── */
+    .nav-controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    /* ── Action row (Flip + Delete) ── */
+    .action-row {
+      display: flex;
+      gap: 12px;
+      width: 100%;
+    }
+
+    .action-row .btn-primary { flex: 1; }
+    .action-row .btn-danger  { flex: 0 0 auto; }
+
+    /* ── Data toolbar (Export / Import) ── */
+    .data-toolbar {
+      width: 100%;
+      max-width: 540px;
+      display: flex;
+      gap: 12px;
+      margin-top: 36px;
+    }
+
+    .data-toolbar .btn {
+      flex: 1;
+    }
+
+    /* Hidden file input for import */
+    #file-import-input {
+      display: none;
+    }
+
+    /* ── Inline error / notice banner ── */
+    .notice {
+      width: 100%;
+      max-width: 540px;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      margin-top: 12px;
+      display: none; /* shown by JS */
+    }
+
+    .notice.error {
+      background: #fff5f5;
+      border: 1px solid #feb2b2;
+      color: #c53030;
+    }
+
+    .notice.success {
+      background: #f0fff4;
+      border: 1px solid #9ae6b4;
+      color: #276749;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Flashcards</h1>
+
+  <!-- ── Add-card form ── -->
+  <div class="add-form">
+    <h2>Add a Card</h2>
+    <div class="field-group">
+      <div>
+        <label for="input-front">Front (Question)</label>
+        <textarea id="input-front" rows="2" placeholder="Type the question…"></textarea>
+      </div>
+      <div>
+        <label for="input-back">Back (Answer)</label>
+        <textarea id="input-back" rows="2" placeholder="Type the answer…"></textarea>
+      </div>
+    </div>
+    <button class="btn btn-primary btn-full" id="btn-add">Add Card</button>
+  </div>
+
+  <!-- ── Card display area ── -->
+  <div class="card-area">
+
+    <div class="empty-state" id="empty-state">
+      No cards yet — add one above!
+    </div>
+
+    <div class="card-scene" id="card-scene" style="display:none;" title="Click to flip">
+      <div class="card-inner" id="card-inner">
+        <div class="card-face front">
+          <span class="card-face-label">Front</span>
+          <p class="card-face-text" id="card-front-text"></p>
+        </div>
+        <div class="card-face back">
+          <span class="card-face-label">Back</span>
+          <p class="card-face-text" id="card-back-text"></p>
+        </div>
+      </div>
+    </div>
+
+    <p class="card-counter" id="card-counter" style="display:none;"></p>
+
+    <div class="nav-controls" id="nav-controls" style="display:none;">
+      <button class="btn btn-secondary" id="btn-prev">&#8592; Previous</button>
+      <button class="btn btn-secondary" id="btn-next">Next &#8594;</button>
+    </div>
+
+    <div class="action-row" id="action-row" style="display:none;">
+      <button class="btn btn-primary" id="btn-flip">Flip Card</button>
+      <button class="btn btn-danger"  id="btn-delete">Delete</button>
+    </div>
+
+  </div>
+
+  <!-- ── Export / Import toolbar ── -->
+  <div class="data-toolbar">
+    <button class="btn btn-secondary" id="btn-export">Export Deck</button>
+    <button class="btn btn-secondary" id="btn-import-trigger">Import Deck</button>
+  </div>
+
+  <!-- Hidden file input for import -->
+  <input type="file" id="file-import-input" accept=".json" />
+
+  <!-- Notice banner for import errors / success -->
+  <div class="notice" id="notice"></div>
+
+  <script>
+    // ── Constants ─────────────────────────────────────────
+    const STORAGE_KEY = 'flashcards_deck'; // key used in localStorage
+
+    // ── State ─────────────────────────────────────────────
+    let deck = [];         // array of { front: string, back: string }
+    let currentIndex = 0;
+
+    // ── DOM refs ──────────────────────────────────────────
+    const inputFront    = document.getElementById('input-front');
+    const inputBack     = document.getElementById('input-back');
+    const btnAdd        = document.getElementById('btn-add');
+
+    const emptyState    = document.getElementById('empty-state');
+    const cardScene     = document.getElementById('card-scene');
+    const cardInner     = document.getElementById('card-inner');
+    const cardFrontText = document.getElementById('card-front-text');
+    const cardBackText  = document.getElementById('card-back-text');
+    const cardCounter   = document.getElementById('card-counter');
+    const navControls   = document.getElementById('nav-controls');
+    const actionRow     = document.getElementById('action-row');
+
+    const btnPrev   = document.getElementById('btn-prev');
+    const btnNext   = document.getElementById('btn-next');
+    const btnFlip   = document.getElementById('btn-flip');
+    const btnDelete = document.getElementById('btn-delete');
+
+    const btnExport       = document.getElementById('btn-export');
+    const btnImportTrigger = document.getElementById('btn-import-trigger');
+    const fileImportInput  = document.getElementById('file-import-input');
+    const noticeEl         = document.getElementById('notice');
+
+    // ── Persistence helpers ───────────────────────────────
+
+    /**
+     * Save the current deck array to localStorage as JSON.
+     * Called after every mutation (add or delete).
+     */
+    function saveDeck() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(deck));
+    }
+
+    /**
+     * Load the deck from localStorage on page load.
+     * Returns the parsed array, or an empty array if nothing is stored.
+     */
+    function loadDeck() {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (!stored) return [];
+        const parsed = JSON.parse(stored);
+        // Basic validation: must be an array of objects with front/back strings
+        if (!Array.isArray(parsed)) return [];
+        return parsed.filter(
+          item => item && typeof item.front === 'string' && typeof item.back === 'string'
+        );
+      } catch {
+        return [];
+      }
+    }
+
+    // ── Notice helpers ────────────────────────────────────
+
+    let noticeTimer = null;
+
+    function showNotice(message, type = 'error') {
+      noticeEl.textContent = message;
+      noticeEl.className   = `notice ${type}`;
+      noticeEl.style.display = 'block';
+      // Auto-dismiss after 4 seconds
+      clearTimeout(noticeTimer);
+      noticeTimer = setTimeout(() => { noticeEl.style.display = 'none'; }, 4000);
+    }
+
+    // ── Render ────────────────────────────────────────────
+    function render() {
+      if (deck.length === 0) {
+        emptyState.style.display  = 'flex';
+        cardScene.style.display   = 'none';
+        cardCounter.style.display = 'none';
+        navControls.style.display = 'none';
+        actionRow.style.display   = 'none';
+        return;
+      }
+
+      if (currentIndex >= deck.length) currentIndex = deck.length - 1;
+      if (currentIndex < 0) currentIndex = 0;
+
+      const card = deck[currentIndex];
+
+      cardFrontText.textContent = card.front;
+      cardBackText.textContent  = card.back;
+      cardInner.classList.remove('is-flipped');
+
+      cardCounter.textContent = `Card ${currentIndex + 1} of ${deck.length}`;
+
+      emptyState.style.display  = 'none';
+      cardScene.style.display   = 'block';
+      cardCounter.style.display = 'block';
+      navControls.style.display = 'flex';
+      actionRow.style.display   = 'flex';
+    }
+
+    // ── Event handlers ────────────────────────────────────
+
+    // Add card
+    btnAdd.addEventListener('click', () => {
+      const front = inputFront.value.trim();
+      const back  = inputBack.value.trim();
+      if (!front || !back) {
+        alert('Please fill in both the Front and Back fields before adding a card.');
+        return;
+      }
+      deck.push({ front, back });
+      currentIndex = deck.length - 1; // jump to the new card
+      inputFront.value = '';
+      inputBack.value  = '';
+      saveDeck();  // persist immediately
+      render();
+    });
+
+    // Flip
+    function flipCard() {
+      cardInner.classList.toggle('is-flipped');
+    }
+    cardScene.addEventListener('click', flipCard);
+    btnFlip.addEventListener('click', flipCard);
+
+    // Previous
+    btnPrev.addEventListener('click', () => {
+      if (deck.length <= 1) return;
+      currentIndex = (currentIndex - 1 + deck.length) % deck.length;
+      render();
+    });
+
+    // Next
+    btnNext.addEventListener('click', () => {
+      if (deck.length <= 1) return;
+      currentIndex = (currentIndex + 1) % deck.length;
+      render();
+    });
+
+    // Delete
+    btnDelete.addEventListener('click', () => {
+      if (deck.length === 0) return;
+      deck.splice(currentIndex, 1);
+      saveDeck();  // persist immediately
+      render();
+    });
+
+    // ── Export ────────────────────────────────────────────
+    /**
+     * Serialize the deck to a JSON file and trigger a browser download.
+     * The file is valid JSON and readable as plain text.
+     */
+    btnExport.addEventListener('click', () => {
+      if (deck.length === 0) {
+        showNotice('There are no cards to export. Add some cards first!', 'error');
+        return;
+      }
+
+      const exportData = {
+        app: 'flashcards',
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        cards: deck
+      };
+
+      const blob = new Blob(
+        [JSON.stringify(exportData, null, 2)],
+        { type: 'application/json' }
+      );
+
+      // Create a temporary link element to trigger the download
+      const url  = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href     = url;
+      link.download = `flashcards-${new Date().toISOString().slice(0,10)}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    });
+
+    // ── Import ────────────────────────────────────────────
+
+    // Clicking "Import Deck" button triggers the hidden file input
+    btnImportTrigger.addEventListener('click', () => {
+      fileImportInput.value = ''; // reset so the same file can be re-imported
+      fileImportInput.click();
+    });
+
+    fileImportInput.addEventListener('change', (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        try {
+          const parsed = JSON.parse(e.target.result);
+
+          // Validate structure: must have a cards array with front/back strings
+          if (
+            !parsed ||
+            !Array.isArray(parsed.cards) ||
+            parsed.cards.length === 0 ||
+            !parsed.cards.every(
+              c => c && typeof c.front === 'string' && typeof c.back === 'string'
+            )
+          ) {
+            showNotice(
+              'This file does not look like a valid flashcard deck. ' +
+              'Please choose a file that was exported from this app.',
+              'error'
+            );
+            return;
+          }
+
+          // Replace deck with imported cards
+          deck = parsed.cards.map(c => ({ front: c.front, back: c.back }));
+          currentIndex = 0;
+          saveDeck();  // persist the imported deck
+          render();
+          showNotice(`Imported ${deck.length} card${deck.length === 1 ? '' : 's'} successfully.`, 'success');
+
+        } catch {
+          showNotice(
+            'Could not read the file — it does not appear to be valid JSON. ' +
+            'Please choose a file that was exported from this app.',
+            'error'
+          );
+        }
+      };
+
+      reader.readAsText(file);
+    });
+
+    // ── Initialise: load persisted deck on page open ──────
+    deck = loadDeck();
+    render();
+  </script>
+
+</body>
+</html>

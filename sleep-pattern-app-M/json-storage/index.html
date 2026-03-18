@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light" />
+    <title>Sleep Pattern Tracker</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css" />
+  </head>
+  <body>
+
+    <!-- ── First-use Setup Modal ──────────────────────────────── -->
+    <div id="setupModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="setupTitle" hidden>
+      <div class="modal">
+        <div class="modal-icon">🌙</div>
+        <h2 id="setupTitle">Welcome to Sleep Tracker</h2>
+        <p class="modal-subtitle">Let's personalise your experience in a few seconds.</p>
+
+        <div class="field">
+          <label for="setupName">Your name</label>
+          <input id="setupName" type="text" placeholder="e.g. Alex" maxlength="60" autocomplete="given-name" />
+          <span class="field-error" id="setupNameError" hidden>Please enter your name.</span>
+        </div>
+
+        <div class="field">
+          <label for="setupThreshold">Minimum sleep goal <span class="unit">(hours)</span></label>
+          <input id="setupThreshold" type="number" min="1" max="24" step="0.5" value="7" />
+          <span class="field-error" id="setupThresholdError" hidden>Enter a value between 1 and 24.</span>
+        </div>
+
+        <button id="setupSave" class="btn btn--primary btn--full">Get Started</button>
+      </div>
+    </div>
+
+    <main class="app">
+
+      <!-- ── Alert Banner ──────────────────────────────────────── -->
+      <div id="alertBanner" class="alert-banner" role="alert" hidden>
+        <svg class="alert-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/>
+        </svg>
+        <span id="alertMessage" class="alert-text"></span>
+        <button id="alertDismiss" class="alert-dismiss" aria-label="Dismiss alert">✕</button>
+      </div>
+
+      <!-- ── Header ─────────────────────────────────────────────── -->
+      <header class="app-header">
+        <div class="header-text">
+          <h1 id="greeting">Sleep Tracker</h1>
+          <p class="subtitle">Track your sleep and build healthier habits.</p>
+        </div>
+        <button id="openSettings" class="btn btn--ghost" aria-expanded="false" aria-controls="settingsPanel">
+          <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16" aria-hidden="true">
+            <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/>
+          </svg>
+          Settings
+        </button>
+      </header>
+
+      <!-- ── Settings Panel ─────────────────────────────────────── -->
+      <section id="settingsPanel" class="card settings-card" hidden aria-label="Settings">
+        <h2>Settings</h2>
+        <div class="settings-row">
+          <div class="field">
+            <label for="settingsName">Your name</label>
+            <input id="settingsName" type="text" maxlength="60" />
+          </div>
+          <div class="field">
+            <label for="settingsThreshold">Sleep goal <span class="unit">(hours)</span></label>
+            <input id="settingsThreshold" type="number" min="1" max="24" step="0.5" />
+          </div>
+          <button id="settingsSave" class="btn btn--primary">Save</button>
+        </div>
+        <p id="settingsMessage" class="form-message" aria-live="polite"></p>
+      </section>
+
+      <!-- ── Log Sleep ──────────────────────────────────────────── -->
+      <section class="card" aria-label="Log sleep">
+        <h2>Log Sleep</h2>
+        <form id="sleepForm" novalidate>
+          <div class="field-grid">
+            <div class="field">
+              <label for="sleepDate">Date</label>
+              <input id="sleepDate" type="date" required />
+            </div>
+            <div class="field">
+              <label for="sleepStart">Bedtime</label>
+              <input id="sleepStart" type="time" required />
+            </div>
+            <div class="field">
+              <label for="sleepEnd">Wake-up time</label>
+              <input id="sleepEnd" type="time" required />
+            </div>
+          </div>
+          <p id="formMessage" class="form-message" aria-live="polite"></p>
+          <button type="submit" class="btn btn--primary">Save Entry</button>
+        </form>
+      </section>
+
+      <!-- ── Chart ─────────────────────────────────────────────── -->
+      <section class="card" aria-label="Sleep chart">
+        <div class="card-row">
+          <div class="month-nav">
+            <button id="prevMonth" class="btn btn--ghost btn--sm" aria-label="Previous month">
+              <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+            </button>
+            <h2 id="chartMonthLabel">Sleep This Month</h2>
+            <button id="nextMonth" class="btn btn--ghost btn--sm" aria-label="Next month" disabled>
+              <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+            </button>
+          </div>
+          <span id="goalPill" class="pill"></span>
+        </div>
+
+        <!-- Stats summary -->
+        <div id="statsRow" class="stats-row" hidden>
+          <div class="stat-card">
+            <div id="statAvg" class="stat-value">—</div>
+            <div class="stat-label">30-day average</div>
+          </div>
+          <div class="stat-card">
+            <div id="statOnTarget" class="stat-value">—</div>
+            <div class="stat-label">Nights on target</div>
+          </div>
+          <div class="stat-card">
+            <div id="statBest" class="stat-value">—</div>
+            <div class="stat-label">Best night</div>
+          </div>
+          <div class="stat-card">
+            <div id="statStreak" class="stat-value">—</div>
+            <div class="stat-label">Current streak</div>
+          </div>
+        </div>
+
+        <div class="chart-wrap">
+          <canvas id="sleepChart" aria-label="Line chart showing sleep duration per night" role="img"></canvas>
+          <p id="chartEmpty" class="empty-state" hidden>No sleep data yet. Add your first entry above.</p>
+          <!-- Point click popover -->
+          <div id="pointPopover" class="point-popover" hidden role="tooltip">
+            <div id="popoverDate" class="popover-date"></div>
+            <div id="popoverTimes" class="popover-times"></div>
+            <button id="popoverEdit" class="btn btn--primary btn--sm">Edit entry</button>
+          </div>
+        </div>
+        <div class="chart-footer">
+          <button id="openLog" class="btn btn--ghost btn--sm" disabled>View Sleep Log</button>
+          <button id="clearAll" class="btn btn--sm btn--outline-danger" disabled>Clear All</button>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- ── Sleep Log Modal ────────────────────────────────────── -->
+    <div id="logModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="logModalTitle" hidden>
+      <div class="modal modal--wide">
+        <div class="modal-header">
+          <h2 id="logModalTitle">Sleep Log</h2>
+          <button id="closeLog" class="btn btn--icon" aria-label="Close">✕</button>
+        </div>
+        <p id="sleepLogEmpty" class="empty-state">No entries yet.</p>
+        <ul id="sleepLog" class="sleep-log" aria-live="polite"></ul>
+      </div>
+    </div>
+
+    <!-- ── Edit Entry Modal ────────────────────────────────────── -->
+    <div id="editModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="editModalTitle" hidden>
+      <div class="modal">
+        <div class="modal-header">
+          <h2 id="editModalTitle">Edit Entry</h2>
+          <button id="closeEdit" class="btn btn--icon" aria-label="Close">✕</button>
+        </div>
+        <input id="editEntryId" type="hidden" />
+        <div class="field">
+          <label for="editDate">Date</label>
+          <input id="editDate" type="text" readonly />
+        </div>
+        <div class="field-grid">
+          <div class="field">
+            <label for="editStart">Bedtime</label>
+            <input id="editStart" type="time" />
+          </div>
+          <div class="field">
+            <label for="editEnd">Wake-up time</label>
+            <input id="editEnd" type="time" />
+          </div>
+        </div>
+        <p id="editMessage" class="form-message" aria-live="polite"></p>
+        <div class="modal-actions">
+          <button id="editSave" class="btn btn--primary">Save Changes</button>
+          <button id="closeEdit2" class="btn btn--ghost">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+    <script src="./src/app.js"></script>
+  </body>
+</html>

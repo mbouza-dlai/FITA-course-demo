@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sleep Tracker</title>
+  <style>
+    /* ── Design tokens ── */
+    :root {
+      --color-bg: #0f1117;
+      --color-surface: #1c1f2e;
+      --color-border: #2e3248;
+      --color-accent: #7c6af7;
+      --color-accent-hover: #6557e0;
+      --color-danger: #e05c5c;
+      --color-danger-hover: #c94848;
+      --color-text: #e8eaf6;
+      --color-text-muted: #8b90b0;
+      --color-text-label: #b0b5d0;
+      --color-avg-bg: #1a1d2e;
+      --radius: 10px;
+      --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+      --font: "Inter", "Segoe UI", system-ui, sans-serif;
+    }
+
+    /* ── Reset & base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--color-bg);
+      color: var(--color-text);
+      font-family: var(--font);
+      min-height: 100vh;
+      padding: 48px 16px 80px;
+    }
+
+    /* ── Page layout ── */
+    .page-wrapper {
+      max-width: 620px;
+      margin: 0 auto;
+    }
+
+    /* ── Header ── */
+    .page-header {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+    .page-header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: var(--color-text);
+    }
+    .page-header p {
+      margin-top: 8px;
+      color: var(--color-text-muted);
+      font-size: 0.95rem;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      padding: 28px;
+      box-shadow: var(--shadow);
+    }
+
+    /* ── Form ── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    @media (max-width: 500px) {
+      .form-grid { grid-template-columns: 1fr; }
+    }
+
+    .field label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--color-text-label);
+      margin-bottom: 6px;
+    }
+
+    .field input {
+      width: 100%;
+      background: var(--color-bg);
+      border: 1px solid var(--color-border);
+      border-radius: 7px;
+      color: var(--color-text);
+      font-family: var(--font);
+      font-size: 0.9rem;
+      padding: 10px 12px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .field input:focus {
+      border-color: var(--color-accent);
+    }
+    .field input::-webkit-calendar-picker-indicator {
+      filter: invert(0.7);
+      cursor: pointer;
+    }
+
+    .btn-submit {
+      width: 100%;
+      background: var(--color-accent);
+      color: #fff;
+      border: none;
+      border-radius: 7px;
+      font-family: var(--font);
+      font-size: 0.95rem;
+      font-weight: 600;
+      padding: 12px;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+    }
+    .btn-submit:hover { background: var(--color-accent-hover); }
+    .btn-submit:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    /* ── Status / error messages ── */
+    .status-msg {
+      font-size: 0.85rem;
+      margin-top: 10px;
+      min-height: 20px;
+    }
+    .status-msg.error   { color: var(--color-danger); }
+    .status-msg.success { color: #6fcf97; }
+    .status-msg.info    { color: var(--color-text-muted); }
+
+    /* ── Divider ── */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--color-border);
+      margin: 28px 0;
+    }
+
+    /* ── Weekly average banner ── */
+    .avg-banner {
+      background: var(--color-avg-bg);
+      border: 1px solid var(--color-border);
+      border-radius: 7px;
+      padding: 12px 16px;
+      margin-bottom: 20px;
+      font-size: 0.9rem;
+      color: var(--color-text-muted);
+      display: none; /* hidden until there are entries */
+    }
+    .avg-banner strong {
+      color: var(--color-accent);
+    }
+
+    /* ── Entries section ── */
+    .entries-section h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 16px;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: var(--color-text-muted);
+      font-size: 0.9rem;
+      padding: 32px 0;
+    }
+
+    .entry-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--color-border);
+    }
+    .entry-item:last-child { border-bottom: none; }
+
+    .entry-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+    }
+    .entry-date {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--color-text);
+    }
+    .entry-times {
+      font-size: 0.82rem;
+      color: var(--color-text-muted);
+    }
+
+    .entry-hours {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--color-accent);
+      white-space: nowrap;
+      min-width: 70px;
+      text-align: right;
+    }
+
+    .btn-delete {
+      background: transparent;
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      color: var(--color-text-muted);
+      font-family: var(--font);
+      font-size: 0.78rem;
+      padding: 5px 10px;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      white-space: nowrap;
+    }
+    .btn-delete:hover {
+      background: var(--color-danger);
+      border-color: var(--color-danger);
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <div class="page-wrapper">
+
+    <!-- Header -->
+    <header class="page-header">
+      <h1>Sleep Tracker</h1>
+      <p>Log your nightly sleep and watch your history grow.</p>
+    </header>
+
+    <!-- Entry form -->
+    <div class="card">
+      <form id="sleep-form" novalidate>
+        <div class="form-grid">
+          <div class="field">
+            <label for="input-date">Date</label>
+            <input type="date" id="input-date" required />
+          </div>
+          <div class="field">
+            <label for="input-bedtime">Bedtime</label>
+            <input type="time" id="input-bedtime" required />
+          </div>
+          <div class="field">
+            <label for="input-waketime">Wake Time</label>
+            <input type="time" id="input-waketime" required />
+          </div>
+        </div>
+        <button type="submit" class="btn-submit" id="btn-submit">Log Sleep</button>
+        <p class="status-msg" id="form-status" aria-live="polite"></p>
+      </form>
+
+      <hr class="divider" />
+
+      <!-- Entries -->
+      <section class="entries-section">
+        <h2>Sleep History</h2>
+
+        <!-- Weekly average line — shown only when entries exist -->
+        <div class="avg-banner" id="avg-banner">
+          Your average over the last <strong id="avg-count">7</strong> entries:
+          <strong id="avg-value">–</strong> hours.
+        </div>
+
+        <div id="entries-list"></div>
+      </section>
+    </div>
+
+  </div>
+
+  <script>
+    // ─── API helpers ──────────────────────────────────────────────────────────
+    // All data now lives on the server (sleep-data.json); we talk to it via fetch.
+
+    const API = {
+      /** Fetch all entries from the server. */
+      async getEntries() {
+        const res = await fetch('/entries');
+        if (!res.ok) throw new Error('Failed to load entries.');
+        return res.json();
+      },
+
+      /** Send a new entry to the server to be appended to the file. */
+      async addEntry(entry) {
+        const res = await fetch('/entries', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(entry)
+        });
+        if (!res.ok) throw new Error('Failed to save entry.');
+        return res.json();
+      },
+
+      /** Tell the server to delete the entry with the given id. */
+      async deleteEntry(id) {
+        const res = await fetch(`/entries/${encodeURIComponent(id)}`, {
+          method: 'DELETE'
+        });
+        if (!res.ok) throw new Error('Failed to delete entry.');
+        return res.json();
+      }
+    };
+
+    // ─── State ────────────────────────────────────────────────────────────────
+    let entries = []; // in-memory mirror of what the server has on disk
+
+    // ─── Hours calculation ─────────────────────────────────────────────────────
+
+    /**
+     * Calculate hours slept.
+     * Handles the overnight case: if wake time is not after bedtime,
+     * assume the person woke up the next morning and add 24 hours.
+     */
+    function calcHours(bedtime, waketime) {
+      const [bH, bM] = bedtime.split(':').map(Number);
+      const [wH, wM] = waketime.split(':').map(Number);
+      let bedMins  = bH * 60 + bM;
+      let wakeMins = wH * 60 + wM;
+      if (wakeMins <= bedMins) wakeMins += 24 * 60;
+      return Math.round((wakeMins - bedMins) / 6) / 10;
+    }
+
+    // ─── Formatting helpers ────────────────────────────────────────────────────
+
+    function formatDate(dateStr) {
+      const [year, month, day] = dateStr.split('-').map(Number);
+      return new Date(year, month - 1, day)
+        .toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    }
+
+    function formatTime(timeStr) {
+      const [h, m] = timeStr.split(':').map(Number);
+      const period = h >= 12 ? 'PM' : 'AM';
+      const hour12 = h % 12 === 0 ? 12 : h % 12;
+      return `${hour12}:${String(m).padStart(2, '0')} ${period}`;
+    }
+
+    // ─── Weekly average ────────────────────────────────────────────────────────
+
+    /**
+     * Compute the average hours slept over the most recent N entries (up to 7).
+     * Returns null if there are no entries.
+     */
+    function computeAverage(entries) {
+      if (entries.length === 0) return null;
+      const slice = entries.slice(0, 7); // entries are newest-first
+      const sum   = slice.reduce((acc, e) => acc + e.hours, 0);
+      return { avg: Math.round(sum / slice.length * 10) / 10, count: slice.length };
+    }
+
+    // ─── Render ────────────────────────────────────────────────────────────────
+
+    function renderEntries() {
+      const container = document.getElementById('entries-list');
+      const avgBanner = document.getElementById('avg-banner');
+
+      // Update the weekly average banner
+      const result = computeAverage(entries);
+      if (result) {
+        document.getElementById('avg-count').textContent = result.count;
+        document.getElementById('avg-value').textContent = result.avg;
+        avgBanner.style.display = 'block';
+      } else {
+        avgBanner.style.display = 'none';
+      }
+
+      // Render the list
+      if (entries.length === 0) {
+        container.innerHTML = '<p class="empty-state">No entries yet — log your first night above.</p>';
+        return;
+      }
+
+      container.innerHTML = entries.map(entry => `
+        <div class="entry-item" data-id="${entry.id}">
+          <div class="entry-info">
+            <span class="entry-date">${formatDate(entry.date)}</span>
+            <span class="entry-times">Bed ${formatTime(entry.bedtime)} &rarr; Wake ${formatTime(entry.waketime)}</span>
+          </div>
+          <span class="entry-hours">${entry.hours} hrs</span>
+          <button class="btn-delete" data-id="${entry.id}">Delete</button>
+        </div>
+      `).join('');
+    }
+
+    // ─── Status message helpers ────────────────────────────────────────────────
+
+    function setStatus(msg, type = 'info') {
+      const el = document.getElementById('form-status');
+      el.textContent = msg;
+      el.className = `status-msg ${type}`;
+    }
+
+    // ─── Delete handler (event delegation) ────────────────────────────────────
+
+    document.getElementById('entries-list').addEventListener('click', async function(e) {
+      const btn = e.target.closest('.btn-delete');
+      if (!btn) return;
+
+      const id = btn.dataset.id;
+      btn.disabled = true;
+      btn.textContent = 'Deleting…';
+
+      try {
+        await API.deleteEntry(id);
+        // Remove from the local in-memory array and re-render
+        entries = entries.filter(e => e.id !== id);
+        renderEntries();
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = 'Delete';
+        setStatus('Could not delete entry — is the server running?', 'error');
+      }
+    });
+
+    // ─── Form submit handler ───────────────────────────────────────────────────
+
+    document.getElementById('sleep-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const dateVal     = document.getElementById('input-date').value;
+      const bedtimeVal  = document.getElementById('input-bedtime').value;
+      const waketimeVal = document.getElementById('input-waketime').value;
+
+      if (!dateVal || !bedtimeVal || !waketimeVal) {
+        setStatus('Please fill in all three fields before submitting.', 'error');
+        return;
+      }
+      setStatus('');
+
+      const submitBtn = document.getElementById('btn-submit');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Saving…';
+
+      const newEntry = {
+        id:       Date.now().toString() + Math.random().toString(36).slice(2, 7),
+        date:     dateVal,
+        bedtime:  bedtimeVal,
+        waketime: waketimeVal,
+        hours:    calcHours(bedtimeVal, waketimeVal)
+      };
+
+      try {
+        await API.addEntry(newEntry);
+        // Update local state and re-render
+        entries.unshift(newEntry);
+        renderEntries();
+
+        // Clear time fields; keep the date for quick multi-entry logging
+        document.getElementById('input-bedtime').value  = '';
+        document.getElementById('input-waketime').value = '';
+        setStatus('Entry saved.', 'success');
+      } catch (err) {
+        setStatus('Could not save entry — is the server running?', 'error');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Log Sleep';
+      }
+    });
+
+    // ─── Initialise on load ────────────────────────────────────────────────────
+
+    async function init() {
+      // Pre-fill today's date
+      const today = new Date();
+      const yyyy  = today.getFullYear();
+      const mm    = String(today.getMonth() + 1).padStart(2, '0');
+      const dd    = String(today.getDate()).padStart(2, '0');
+      document.getElementById('input-date').value = `${yyyy}-${mm}-${dd}`;
+
+      // Load entries from the server
+      try {
+        entries = await API.getEntries();
+        renderEntries();
+      } catch (err) {
+        document.getElementById('entries-list').innerHTML =
+          '<p class="empty-state" style="color:var(--color-danger)">Could not connect to server. Make sure <code>node server.js</code> is running.</p>';
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

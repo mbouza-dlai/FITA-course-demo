@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sleep Tracker</title>
+
+  <!--
+    Supabase JS client loaded from CDN — no npm install needed.
+    Replace SUPABASE_URL and SUPABASE_ANON_KEY below with your project's values.
+  -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+  <style>
+    /* ── Design tokens ── */
+    :root {
+      --color-bg: #0f1117;
+      --color-surface: #1c1f2e;
+      --color-border: #2e3248;
+      --color-accent: #7c6af7;
+      --color-accent-hover: #6557e0;
+      --color-danger: #e05c5c;
+      --color-text: #e8eaf6;
+      --color-text-muted: #8b90b0;
+      --color-text-label: #b0b5d0;
+      --radius: 10px;
+      --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+      --font: "Inter", "Segoe UI", system-ui, sans-serif;
+    }
+
+    /* ── Reset & base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--color-bg);
+      color: var(--color-text);
+      font-family: var(--font);
+      min-height: 100vh;
+      padding: 48px 16px 80px;
+    }
+
+    /* ── Page layout ── */
+    .page-wrapper {
+      max-width: 640px;
+      margin: 0 auto;
+    }
+
+    /* ── Header ── */
+    .page-header {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+    .page-header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    .page-header p {
+      margin-top: 8px;
+      color: var(--color-text-muted);
+      font-size: 0.95rem;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      padding: 28px;
+      box-shadow: var(--shadow);
+    }
+
+    /* ── Form ── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    @media (max-width: 500px) {
+      .form-grid { grid-template-columns: 1fr; }
+    }
+
+    .field label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--color-text-label);
+      margin-bottom: 6px;
+    }
+
+    .field input {
+      width: 100%;
+      background: var(--color-bg);
+      border: 1px solid var(--color-border);
+      border-radius: 7px;
+      color: var(--color-text);
+      font-family: var(--font);
+      font-size: 0.9rem;
+      padding: 10px 12px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .field input:focus { border-color: var(--color-accent); }
+    .field input::-webkit-calendar-picker-indicator { filter: invert(0.7); cursor: pointer; }
+
+    .btn-submit {
+      width: 100%;
+      background: var(--color-accent);
+      color: #fff;
+      border: none;
+      border-radius: 7px;
+      font-family: var(--font);
+      font-size: 0.95rem;
+      font-weight: 600;
+      padding: 12px;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+    }
+    .btn-submit:hover { background: var(--color-accent-hover); }
+    .btn-submit:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    .status-msg {
+      font-size: 0.85rem;
+      margin-top: 10px;
+      min-height: 20px;
+    }
+    .status-msg.error   { color: var(--color-danger); }
+    .status-msg.success { color: #6fcf97; }
+    .status-msg.info    { color: var(--color-text-muted); }
+
+    /* ── Divider ── */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--color-border);
+      margin: 28px 0;
+    }
+
+    /* ── Average banner ── */
+    .avg-banner {
+      background: rgba(124, 106, 247, 0.08);
+      border: 1px solid rgba(124, 106, 247, 0.25);
+      border-radius: 7px;
+      padding: 12px 16px;
+      margin-bottom: 20px;
+      font-size: 0.9rem;
+      color: var(--color-text-muted);
+      display: none;
+    }
+    .avg-banner strong { color: var(--color-accent); }
+
+    /* ── Bar chart ── */
+    .chart-container {
+      margin-bottom: 24px;
+      display: none; /* shown when entries exist */
+    }
+    .chart-title {
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--color-text-muted);
+      margin-bottom: 12px;
+    }
+    .chart {
+      display: flex;
+      align-items: flex-end;
+      gap: 6px;
+      height: 100px; /* fixed chart area height */
+    }
+    .bar-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      height: 100%;
+      justify-content: flex-end;
+    }
+    .bar {
+      width: 100%;
+      background: var(--color-accent);
+      border-radius: 4px 4px 0 0;
+      opacity: 0.85;
+      min-height: 3px;
+      transition: opacity 0.15s;
+    }
+    .bar:hover { opacity: 1; }
+    .bar-label-hours {
+      font-size: 0.65rem;
+      color: var(--color-text-muted);
+      text-align: center;
+    }
+    .bar-label-date {
+      font-size: 0.6rem;
+      color: var(--color-text-muted);
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+
+    /* ── Entries section ── */
+    .entries-section h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 16px;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: var(--color-text-muted);
+      font-size: 0.9rem;
+      padding: 32px 0;
+    }
+
+    .entry-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--color-border);
+    }
+    .entry-item:last-child { border-bottom: none; }
+
+    .entry-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+    }
+    .entry-date  { font-size: 0.95rem; font-weight: 600; color: var(--color-text); }
+    .entry-times { font-size: 0.82rem; color: var(--color-text-muted); }
+
+    .entry-hours {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--color-accent);
+      white-space: nowrap;
+      min-width: 70px;
+      text-align: right;
+    }
+
+    .btn-delete {
+      background: transparent;
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      color: var(--color-text-muted);
+      font-family: var(--font);
+      font-size: 0.78rem;
+      padding: 5px 10px;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      white-space: nowrap;
+    }
+    .btn-delete:hover {
+      background: var(--color-danger);
+      border-color: var(--color-danger);
+      color: #fff;
+    }
+
+    /* ── Config notice (shown when credentials are placeholder) ── */
+    .config-notice {
+      background: #2a1f0e;
+      border: 1px solid #6b4c1a;
+      border-radius: 7px;
+      padding: 16px;
+      margin-bottom: 24px;
+      font-size: 0.88rem;
+      color: #f0c060;
+      line-height: 1.6;
+    }
+    .config-notice code {
+      background: rgba(255,255,255,0.1);
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-size: 0.82rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="page-wrapper">
+
+    <header class="page-header">
+      <h1>Sleep Tracker</h1>
+      <p>Log your nightly sleep and watch your history grow.</p>
+    </header>
+
+    <!-- Shown when Supabase credentials are still placeholders -->
+    <div class="config-notice" id="config-notice" style="display:none">
+      To connect your database, open this file and replace <code>YOUR_SUPABASE_URL</code>
+      and <code>YOUR_SUPABASE_ANON_KEY</code> near the top of the &lt;script&gt; section
+      with your actual Supabase project credentials.
+    </div>
+
+    <div class="card">
+      <form id="sleep-form" novalidate>
+        <div class="form-grid">
+          <div class="field">
+            <label for="input-date">Date</label>
+            <input type="date" id="input-date" required />
+          </div>
+          <div class="field">
+            <label for="input-bedtime">Bedtime</label>
+            <input type="time" id="input-bedtime" required />
+          </div>
+          <div class="field">
+            <label for="input-waketime">Wake Time</label>
+            <input type="time" id="input-waketime" required />
+          </div>
+        </div>
+        <button type="submit" class="btn-submit" id="btn-submit">Log Sleep</button>
+        <p class="status-msg" id="form-status" aria-live="polite"></p>
+      </form>
+
+      <hr class="divider" />
+
+      <section class="entries-section">
+        <h2>Sleep History</h2>
+
+        <!-- Weekly average -->
+        <div class="avg-banner" id="avg-banner">
+          Your average over the last <strong id="avg-count">7</strong> entries:
+          <strong id="avg-value">–</strong> hours.
+        </div>
+
+        <!-- 7-day bar chart -->
+        <div class="chart-container" id="chart-container">
+          <div class="chart-title">Last 7 Nights</div>
+          <div class="chart" id="chart"></div>
+        </div>
+
+        <div id="entries-list"></div>
+      </section>
+    </div>
+
+  </div>
+
+  <script>
+    // ─── Configuration ────────────────────────────────────────────────────────
+    //
+    // Replace the two values below with your own Supabase project credentials.
+    // Find them in: Supabase Dashboard → Project Settings → API
+    //
+    const SUPABASE_URL      = 'YOUR_SUPABASE_URL';
+    const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+
+    // ─── Supabase setup ───────────────────────────────────────────────────────
+    //
+    // The app expects a table called "sleep_entries" with these columns:
+    //   id        text  PRIMARY KEY
+    //   date      text  (YYYY-MM-DD)
+    //   bedtime   text  (HH:MM, 24-hour)
+    //   waketime  text  (HH:MM, 24-hour)
+    //   hours     float
+    //   created_at timestamptz DEFAULT now()
+    //
+    // In the Supabase SQL Editor, run:
+    //   CREATE TABLE sleep_entries (
+    //     id         text PRIMARY KEY,
+    //     date       text NOT NULL,
+    //     bedtime    text NOT NULL,
+    //     waketime   text NOT NULL,
+    //     hours      float NOT NULL,
+    //     created_at timestamptz DEFAULT now()
+    //   );
+    //
+
+    // Show a notice if credentials are still placeholders
+    const credentialsConfigured =
+      SUPABASE_URL !== 'YOUR_SUPABASE_URL' &&
+      SUPABASE_ANON_KEY !== 'YOUR_SUPABASE_ANON_KEY';
+
+    if (!credentialsConfigured) {
+      document.getElementById('config-notice').style.display = 'block';
+    }
+
+    // Initialise the Supabase client (only if credentials look real)
+    const supabase = credentialsConfigured
+      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+      : null;
+
+    // ─── State ────────────────────────────────────────────────────────────────
+    let entries = []; // local mirror, newest-first
+
+    // ─── Helpers ──────────────────────────────────────────────────────────────
+
+    /** Calculate hours slept; handles the standard overnight case. */
+    function calcHours(bedtime, waketime) {
+      const [bH, bM] = bedtime.split(':').map(Number);
+      const [wH, wM] = waketime.split(':').map(Number);
+      let bedMins  = bH * 60 + bM;
+      let wakeMins = wH * 60 + wM;
+      if (wakeMins <= bedMins) wakeMins += 24 * 60;
+      return Math.round((wakeMins - bedMins) / 6) / 10;
+    }
+
+    function formatDate(dateStr) {
+      const [y, m, d] = dateStr.split('-').map(Number);
+      return new Date(y, m - 1, d)
+        .toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    }
+
+    /** Short date label for chart bars: "Mar 15" */
+    function shortDate(dateStr) {
+      const [y, m, d] = dateStr.split('-').map(Number);
+      return new Date(y, m - 1, d)
+        .toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    function formatTime(timeStr) {
+      const [h, m] = timeStr.split(':').map(Number);
+      const period = h >= 12 ? 'PM' : 'AM';
+      const hour12 = h % 12 === 0 ? 12 : h % 12;
+      return `${hour12}:${String(m).padStart(2, '0')} ${period}`;
+    }
+
+    // ─── Weekly average ────────────────────────────────────────────────────────
+
+    function computeAverage(entries) {
+      if (entries.length === 0) return null;
+      const slice = entries.slice(0, 7);
+      const sum   = slice.reduce((acc, e) => acc + e.hours, 0);
+      return { avg: Math.round(sum / slice.length * 10) / 10, count: slice.length };
+    }
+
+    // ─── Bar chart ─────────────────────────────────────────────────────────────
+
+    /**
+     * Render a simple bar chart for the last 7 entries (or fewer).
+     * Bars are drawn using div elements with height proportional to hours slept.
+     * The tallest bar fills the full chart area; others scale relative to it.
+     * No external library — pure HTML/CSS.
+     */
+    function renderChart(entries) {
+      const container = document.getElementById('chart-container');
+      const chartEl   = document.getElementById('chart');
+
+      const slice = entries.slice(0, 7);
+
+      if (slice.length === 0) {
+        container.style.display = 'none';
+        return;
+      }
+
+      container.style.display = 'block';
+
+      // Chart area height in pixels (must match CSS .chart height)
+      const CHART_HEIGHT_PX = 100;
+      // Reserve ~20px at the bottom for the date label leaving ~80px for bars + hours label
+      const BAR_AREA_PX = 68;
+
+      const maxHours = Math.max(...slice.map(e => e.hours));
+
+      // Render bars in chronological order (oldest on left)
+      const barsHTML = [...slice].reverse().map(entry => {
+        const barHeightPx = maxHours > 0
+          ? Math.max(3, Math.round((entry.hours / maxHours) * BAR_AREA_PX))
+          : 3;
+
+        return `
+          <div class="bar-col" title="${formatDate(entry.date)}: ${entry.hours} hrs">
+            <div class="bar-label-hours">${entry.hours}h</div>
+            <div class="bar" style="height: ${barHeightPx}px;"></div>
+            <div class="bar-label-date">${shortDate(entry.date)}</div>
+          </div>
+        `;
+      }).join('');
+
+      chartEl.innerHTML = barsHTML;
+    }
+
+    // ─── Full render ──────────────────────────────────────────────────────────
+
+    function render() {
+      // Average banner
+      const result = computeAverage(entries);
+      const avgBanner = document.getElementById('avg-banner');
+      if (result) {
+        document.getElementById('avg-count').textContent = result.count;
+        document.getElementById('avg-value').textContent = result.avg;
+        avgBanner.style.display = 'block';
+      } else {
+        avgBanner.style.display = 'none';
+      }
+
+      // Bar chart
+      renderChart(entries);
+
+      // Entries list
+      const container = document.getElementById('entries-list');
+      if (entries.length === 0) {
+        container.innerHTML = '<p class="empty-state">No entries yet — log your first night above.</p>';
+        return;
+      }
+
+      container.innerHTML = entries.map(entry => `
+        <div class="entry-item" data-id="${entry.id}">
+          <div class="entry-info">
+            <span class="entry-date">${formatDate(entry.date)}</span>
+            <span class="entry-times">Bed ${formatTime(entry.bedtime)} &rarr; Wake ${formatTime(entry.waketime)}</span>
+          </div>
+          <span class="entry-hours">${entry.hours} hrs</span>
+          <button class="btn-delete" data-id="${entry.id}">Delete</button>
+        </div>
+      `).join('');
+    }
+
+    // ─── Status helpers ────────────────────────────────────────────────────────
+
+    function setStatus(msg, type = 'info') {
+      const el = document.getElementById('form-status');
+      el.textContent = msg;
+      el.className = `status-msg ${type}`;
+    }
+
+    // ─── Supabase API wrappers ─────────────────────────────────────────────────
+
+    /**
+     * Load ALL entries from Supabase, ordered by created_at descending.
+     * Using .order() on a server-side column avoids the issue where a
+     * partial result set can be returned when only ordering by date —
+     * two entries logged on the same date would have an unstable order.
+     *
+     * Fix for Prompt 3.2: the missing entries bug is caused by Supabase's
+     * default row limit of 1000. We pass { count: 'exact' } and loop with
+     * range() to fetch all pages if the table grows large. For typical
+     * personal use (< 1000 rows) a single request with a high range is fine.
+     */
+    async function fetchAllEntries() {
+      const PAGE_SIZE = 1000;
+      let allRows = [];
+      let from = 0;
+
+      while (true) {
+        const { data, error, count } = await supabase
+          .from('sleep_entries')
+          .select('*', { count: 'exact' })
+          .order('created_at', { ascending: false })
+          .range(from, from + PAGE_SIZE - 1);
+
+        if (error) throw error;
+        allRows = allRows.concat(data);
+
+        // Stop when we've fetched all rows
+        if (allRows.length >= count || data.length < PAGE_SIZE) break;
+        from += PAGE_SIZE;
+      }
+
+      return allRows;
+    }
+
+    async function addEntryToSupabase(entry) {
+      const { error } = await supabase
+        .from('sleep_entries')
+        .insert([entry]);
+      if (error) throw error;
+    }
+
+    async function deleteEntryFromSupabase(id) {
+      const { error } = await supabase
+        .from('sleep_entries')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    }
+
+    // ─── Event handlers ────────────────────────────────────────────────────────
+
+    document.getElementById('entries-list').addEventListener('click', async function(e) {
+      const btn = e.target.closest('.btn-delete');
+      if (!btn) return;
+
+      const id = btn.dataset.id;
+      btn.disabled = true;
+      btn.textContent = 'Deleting…';
+
+      try {
+        if (supabase) await deleteEntryFromSupabase(id);
+        entries = entries.filter(e => e.id !== id);
+        render();
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = 'Delete';
+        setStatus('Could not delete entry — check your database connection.', 'error');
+        console.error(err);
+      }
+    });
+
+    document.getElementById('sleep-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const dateVal     = document.getElementById('input-date').value;
+      const bedtimeVal  = document.getElementById('input-bedtime').value;
+      const waketimeVal = document.getElementById('input-waketime').value;
+
+      if (!dateVal || !bedtimeVal || !waketimeVal) {
+        setStatus('Please fill in all three fields.', 'error');
+        return;
+      }
+      setStatus('');
+
+      const submitBtn = document.getElementById('btn-submit');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Saving…';
+
+      const newEntry = {
+        id:       Date.now().toString() + Math.random().toString(36).slice(2, 7),
+        date:     dateVal,
+        bedtime:  bedtimeVal,
+        waketime: waketimeVal,
+        hours:    calcHours(bedtimeVal, waketimeVal)
+      };
+
+      try {
+        if (supabase) await addEntryToSupabase(newEntry);
+        entries.unshift(newEntry);
+        render();
+
+        document.getElementById('input-bedtime').value  = '';
+        document.getElementById('input-waketime').value = '';
+        setStatus('Entry saved.', 'success');
+      } catch (err) {
+        setStatus('Could not save entry — check your database connection.', 'error');
+        console.error(err);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Log Sleep';
+      }
+    });
+
+    // ─── Initialise ────────────────────────────────────────────────────────────
+
+    async function init() {
+      // Pre-fill today's date
+      const today = new Date();
+      const yyyy  = today.getFullYear();
+      const mm    = String(today.getMonth() + 1).padStart(2, '0');
+      const dd    = String(today.getDate()).padStart(2, '0');
+      document.getElementById('input-date').value = `${yyyy}-${mm}-${dd}`;
+
+      if (!supabase) {
+        // No credentials — render empty state, don't attempt network calls
+        render();
+        return;
+      }
+
+      setStatus('Loading entries…', 'info');
+      try {
+        entries = await fetchAllEntries();
+        setStatus('');
+        render();
+      } catch (err) {
+        setStatus('Could not load entries — check your Supabase credentials.', 'error');
+        console.error(err);
+        render(); // render empty state so the UI is still usable
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

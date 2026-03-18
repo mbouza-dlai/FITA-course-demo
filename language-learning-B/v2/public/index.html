@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vocab Builder — Language Learning App</title>
+
+  <style>
+    /* ─── Design Tokens ─────────────────────────────────────────────────── */
+    :root {
+      --color-bg:              #f5f4f0;
+      --color-surface:         #ffffff;
+      --color-border:          #e2e0da;
+      --color-primary:         #4f46e5;
+      --color-primary-hover:   #4338ca;
+      --color-learned:         #16a34a;
+      --color-learned-bg:      #f0fdf4;
+      --color-learned-border:  #bbf7d0;
+      --color-quiz:            #d97706;       /* amber — quiz mode accent */
+      --color-quiz-bg:         #fffbeb;
+      --color-quiz-border:     #fde68a;
+      --color-text:            #1c1917;
+      --color-text-muted:      #78716c;
+      --color-error:           #dc2626;
+      --color-error-bg:        #fef2f2;
+      --color-lookup-bg:       #f0f4ff;
+      --color-lookup-border:   #c7d2fe;
+
+      --radius:     12px;
+      --radius-sm:  8px;
+      --shadow:     0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.05);
+      --shadow-card:0 2px 8px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+
+      --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    /* ─── Reset & Base ───────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-bg);
+      color: var(--color-text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ─── Layout ─────────────────────────────────────────────────────────── */
+    .app-wrapper {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 32px 16px 64px;
+    }
+
+    /* ─── Header ─────────────────────────────────────────────────────────── */
+    .app-header {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+
+    .app-header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .app-header p {
+      margin-top: 8px;
+      color: var(--color-text-muted);
+      font-size: 0.95rem;
+    }
+
+    /* ─── Controls Panel ─────────────────────────────────────────────────── */
+    .controls-panel {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .control-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .control-row label {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--color-text-muted);
+      white-space: nowrap;
+      min-width: 80px;
+    }
+
+    select {
+      flex: 1;
+      min-width: 140px;
+      padding: 10px 14px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      font-family: var(--font-sans);
+      font-size: 0.95rem;
+      color: var(--color-text);
+      background: var(--color-bg);
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2378716c' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      padding-right: 32px;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+    }
+
+    .btn-primary {
+      padding: 11px 24px;
+      background: var(--color-primary);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-sans);
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      white-space: nowrap;
+    }
+
+    .btn-primary:hover:not(:disabled) { background: var(--color-primary-hover); }
+    .btn-primary:active:not(:disabled) { transform: scale(0.98); }
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    /* ─── Progress & Quiz Row ────────────────────────────────────────────── */
+    .status-row {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .status-row.visible { display: flex; }
+
+    /* Progress pill */
+    .progress-pill {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      min-width: 200px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+    }
+
+    .progress-label {
+      font-size: 0.875rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .progress-track {
+      flex: 1;
+      height: 8px;
+      background: var(--color-border);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--color-learned);
+      border-radius: 99px;
+      transition: width 0.3s ease;
+      width: 0%;
+    }
+
+    /* Quiz Mode toggle button */
+    .btn-quiz {
+      padding: 10px 18px;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-sans);
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      border: 1.5px solid var(--color-border);
+      background: var(--color-surface);
+      color: var(--color-text-muted);
+      white-space: nowrap;
+    }
+
+    .btn-quiz:hover {
+      border-color: var(--color-quiz);
+      color: var(--color-quiz);
+      background: var(--color-quiz-bg);
+    }
+
+    /* When quiz mode is active, the button looks "pressed" */
+    .btn-quiz.active {
+      border-color: var(--color-quiz);
+      background: var(--color-quiz-bg);
+      color: var(--color-quiz);
+    }
+
+    /* ─── Custom Lookup Section ──────────────────────────────────────────── */
+    .lookup-section {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+    }
+
+    .lookup-section h2 {
+      font-size: 0.875rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--color-text-muted);
+      margin-bottom: 12px;
+    }
+
+    .lookup-input-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .lookup-input-row input[type="text"] {
+      flex: 1;
+      min-width: 180px;
+      padding: 10px 14px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      font-family: var(--font-sans);
+      font-size: 0.95rem;
+      color: var(--color-text);
+      background: var(--color-bg);
+      transition: border-color 0.15s;
+    }
+
+    .lookup-input-row input[type="text"]:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+    }
+
+    .lookup-input-row input[type="text"]::placeholder {
+      color: var(--color-text-muted);
+    }
+
+    /* Lookup result card */
+    .lookup-result {
+      display: none;
+      margin-top: 16px;
+      padding: 16px;
+      background: var(--color-lookup-bg);
+      border: 1px solid var(--color-lookup-border);
+      border-radius: var(--radius-sm);
+    }
+
+    .lookup-result.visible { display: block; }
+
+    .lookup-result-word {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--color-primary);
+      margin-bottom: 8px;
+    }
+
+    .lookup-field {
+      font-size: 0.875rem;
+      margin-bottom: 6px;
+      line-height: 1.5;
+    }
+
+    .lookup-field strong {
+      color: var(--color-text);
+      font-weight: 600;
+    }
+
+    .lookup-field span {
+      color: var(--color-text-muted);
+    }
+
+    .lookup-sentences {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--color-lookup-border);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .lookup-sentence {
+      font-size: 0.875rem;
+      font-style: italic;
+      color: var(--color-text-muted);
+    }
+
+    /* Lookup loading / error */
+    .lookup-loading {
+      display: none;
+      margin-top: 12px;
+      font-size: 0.875rem;
+      color: var(--color-text-muted);
+      align-items: center;
+      gap: 8px;
+    }
+
+    .lookup-loading.visible { display: flex; }
+
+    .lookup-error {
+      display: none;
+      margin-top: 12px;
+      font-size: 0.875rem;
+      color: var(--color-error);
+      padding: 10px 12px;
+      background: var(--color-error-bg);
+      border: 1px solid #fecaca;
+      border-radius: var(--radius-sm);
+    }
+
+    .lookup-error.visible { display: block; }
+
+    /* ─── Error Message ──────────────────────────────────────────────────── */
+    .error-message {
+      display: none;
+      padding: 14px 16px;
+      background: var(--color-error-bg);
+      border: 1px solid #fecaca;
+      border-radius: var(--radius-sm);
+      color: var(--color-error);
+      font-size: 0.9rem;
+      margin-bottom: 20px;
+    }
+
+    .error-message.visible { display: block; }
+
+    /* ─── Loading State ──────────────────────────────────────────────────── */
+    .loading-indicator {
+      display: none;
+      text-align: center;
+      padding: 48px 24px;
+      color: var(--color-text-muted);
+      font-size: 0.95rem;
+    }
+
+    .loading-indicator.visible { display: block; }
+
+    .spinner {
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      border: 3px solid var(--color-border);
+      border-top-color: var(--color-primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 12px;
+    }
+
+    .spinner-sm {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid var(--color-border);
+      border-top-color: var(--color-primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ─── Section Divider Label ──────────────────────────────────────────── */
+    .section-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--color-text-muted);
+      margin-bottom: 14px;
+    }
+
+    /* ─── Word Cards Grid ────────────────────────────────────────────────── */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    @media (min-width: 560px) {
+      .cards-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    /* ─── Word Card ──────────────────────────────────────────────────────── */
+    .word-card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow-card);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: border-color 0.2s, background 0.2s;
+      position: relative;
+    }
+
+    /* Learned state */
+    .word-card.learned {
+      background: var(--color-learned-bg);
+      border-color: var(--color-learned-border);
+    }
+
+    .word-card.learned .card-word { color: var(--color-learned); }
+
+    /* Checkmark badge */
+    .learned-badge {
+      display: none;
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      width: 24px;
+      height: 24px;
+      background: var(--color-learned);
+      border-radius: 50%;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .word-card.learned .learned-badge { display: flex; }
+
+    .learned-badge svg {
+      width: 13px;
+      height: 13px;
+      stroke: #fff;
+      stroke-width: 2.5;
+    }
+
+    .card-word {
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--color-primary);
+      line-height: 1.2;
+      padding-right: 32px;
+    }
+
+    .card-translation {
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--color-text);
+    }
+
+    .card-translation span {
+      color: var(--color-text-muted);
+      font-weight: 400;
+    }
+
+    .card-sentence {
+      font-size: 0.875rem;
+      color: var(--color-text-muted);
+      font-style: italic;
+      line-height: 1.5;
+      border-top: 1px solid var(--color-border);
+      padding-top: 10px;
+      flex: 1;
+    }
+
+    /* ─── Quiz Mode Card Overrides ───────────────────────────────────────── */
+    /*
+     * In quiz mode, the .card-translation is hidden and replaced by a
+     * "Reveal" button. When the user clicks Reveal, a data attribute
+     * on the card is toggled and the translation becomes visible.
+     * This is all done via CSS classes — learned state is never touched.
+     */
+
+    /* Hide the translation area when quiz mode is active */
+    .quiz-active .word-card .card-translation {
+      display: none;
+    }
+
+    /* Show the reveal button only in quiz mode */
+    .btn-reveal {
+      display: none;
+      padding: 7px 14px;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-sans);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1.5px solid var(--color-quiz-border);
+      background: var(--color-quiz-bg);
+      color: var(--color-quiz);
+      text-align: center;
+      transition: background 0.15s;
+    }
+
+    .quiz-active .btn-reveal { display: block; }
+    .btn-reveal:hover { background: #fde68a; }
+
+    /* Once the user clicks Reveal on a specific card, show the translation */
+    .quiz-active .word-card.revealed .card-translation { display: block; }
+    /* And hide the reveal button since it's no longer needed */
+    .quiz-active .word-card.revealed .btn-reveal { display: none; }
+
+    /* ─── Mark as Learned Button ─────────────────────────────────────────── */
+    .btn-learned {
+      margin-top: 4px;
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-sans);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      border: 1.5px solid var(--color-border);
+      background: transparent;
+      color: var(--color-text-muted);
+      text-align: center;
+    }
+
+    .btn-learned:hover {
+      border-color: var(--color-learned);
+      color: var(--color-learned);
+      background: var(--color-learned-bg);
+    }
+
+    .word-card.learned .btn-learned {
+      border-color: var(--color-learned);
+      color: var(--color-learned);
+      background: #dcfce7;
+    }
+
+    .word-card.learned .btn-learned:hover { background: #bbf7d0; }
+
+    /* ─── Empty State ────────────────────────────────────────────────────── */
+    .empty-state {
+      text-align: center;
+      padding: 56px 24px;
+      color: var(--color-text-muted);
+    }
+
+    .empty-state .empty-icon {
+      font-size: 2.5rem;
+      margin-bottom: 16px;
+      display: block;
+    }
+
+    .empty-state p { font-size: 0.95rem; }
+  </style>
+</head>
+
+<body>
+  <div class="app-wrapper">
+
+    <!-- Header -->
+    <header class="app-header">
+      <h1>Vocab Builder</h1>
+      <p>AI-powered vocabulary cards for language learners</p>
+    </header>
+
+    <!-- Controls: language + difficulty + fetch button -->
+    <section class="controls-panel" aria-label="Word settings">
+      <div class="control-row">
+        <label for="language-select">Language</label>
+        <select id="language-select" aria-label="Choose a language">
+          <option value="Spanish">Spanish</option>
+          <option value="French">French</option>
+          <option value="Japanese">Japanese</option>
+          <option value="German">German</option>
+          <option value="Portuguese">Portuguese</option>
+        </select>
+      </div>
+      <div class="control-row">
+        <label for="difficulty-select">Difficulty</label>
+        <!-- Defaults to Beginner as specified in Prompt 2.1 -->
+        <select id="difficulty-select" aria-label="Choose a difficulty level">
+          <option value="Beginner" selected>Beginner</option>
+          <option value="Intermediate">Intermediate</option>
+          <option value="Advanced">Advanced</option>
+        </select>
+        <button class="btn-primary" id="fetch-btn">Get New Words</button>
+      </div>
+    </section>
+
+    <!-- Custom Word Lookup (Prompt 2.2) -->
+    <section class="lookup-section" aria-label="Custom word lookup">
+      <h2>Look Up a Word</h2>
+      <div class="lookup-input-row">
+        <input
+          type="text"
+          id="lookup-input"
+          placeholder="Type any word or phrase…"
+          aria-label="Word or phrase to look up"
+        />
+        <button class="btn-primary" id="lookup-btn">Look Up</button>
+      </div>
+
+      <!-- Loading indicator for lookup -->
+      <div class="lookup-loading" id="lookup-loading" aria-live="polite">
+        <div class="spinner-sm"></div>
+        <span>Looking up&hellip;</span>
+      </div>
+
+      <!-- Error for lookup -->
+      <div class="lookup-error" id="lookup-error" role="alert"></div>
+
+      <!-- Result card -->
+      <div class="lookup-result" id="lookup-result" aria-live="polite">
+        <div class="lookup-result-word" id="lookup-result-word"></div>
+        <div class="lookup-field">
+          <strong>Translation:</strong> <span id="lookup-translation"></span>
+        </div>
+        <div class="lookup-field">
+          <strong>Pronunciation tip:</strong> <span id="lookup-pronunciation"></span>
+        </div>
+        <div class="lookup-sentences" id="lookup-sentences"></div>
+      </div>
+    </section>
+
+    <!-- Progress + Quiz Mode toggle row (hidden until cards load) -->
+    <div class="status-row" id="status-row">
+      <div class="progress-pill">
+        <span class="progress-label" id="progress-label">0 / 5 learned</span>
+        <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="5" aria-valuenow="0" id="progress-track">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+      </div>
+      <!-- Quiz Mode toggle -->
+      <button class="btn-quiz" id="quiz-btn" aria-pressed="false">Quiz Mode</button>
+    </div>
+
+    <!-- Fetch error message -->
+    <div class="error-message" id="error-message" role="alert" aria-live="assertive"></div>
+
+    <!-- Loading spinner -->
+    <div class="loading-indicator" id="loading-indicator">
+      <div class="spinner"></div>
+      <p>Fetching vocabulary words&hellip;</p>
+    </div>
+
+    <!-- Word cards grid -->
+    <main id="cards-container">
+      <div class="empty-state" id="empty-state">
+        <span class="empty-icon">📚</span>
+        <p>Pick a language and difficulty above, then click <strong>Get New Words</strong> to start learning.</p>
+      </div>
+    </main>
+
+  </div>
+
+  <script>
+    // ─── App State ─────────────────────────────────────────────────────────
+    let currentWords = [];          // Array of { word, translation, sentence }
+    let learnedSet   = new Set();   // Set of learned card indices (0–4)
+    let quizMode     = false;       // Whether quiz mode is currently active
+
+    // ─── localStorage Keys ─────────────────────────────────────────────────
+    const STORAGE_KEY_WORDS      = 'vocabBuilder_words';
+    const STORAGE_KEY_LEARNED    = 'vocabBuilder_learned';
+    const STORAGE_KEY_LANG       = 'vocabBuilder_language';
+    const STORAGE_KEY_DIFFICULTY = 'vocabBuilder_difficulty';
+
+    // ─── DOM References ────────────────────────────────────────────────────
+    const languageSelect   = document.getElementById('language-select');
+    const difficultySelect = document.getElementById('difficulty-select');
+    const fetchBtn         = document.getElementById('fetch-btn');
+    const statusRow        = document.getElementById('status-row');
+    const progressLabel    = document.getElementById('progress-label');
+    const progressFill     = document.getElementById('progress-fill');
+    const progressTrack    = document.getElementById('progress-track');
+    const quizBtn          = document.getElementById('quiz-btn');
+    const errorMessage     = document.getElementById('error-message');
+    const loadingIndicator = document.getElementById('loading-indicator');
+    const cardsContainer   = document.getElementById('cards-container');
+    const emptyState       = document.getElementById('empty-state');
+
+    const lookupInput      = document.getElementById('lookup-input');
+    const lookupBtn        = document.getElementById('lookup-btn');
+    const lookupLoading    = document.getElementById('lookup-loading');
+    const lookupError      = document.getElementById('lookup-error');
+    const lookupResult     = document.getElementById('lookup-result');
+    const lookupResultWord = document.getElementById('lookup-result-word');
+    const lookupTranslation= document.getElementById('lookup-translation');
+    const lookupPronunciation = document.getElementById('lookup-pronunciation');
+    const lookupSentences  = document.getElementById('lookup-sentences');
+
+    // ─── Init: Restore State from localStorage ─────────────────────────────
+    function init() {
+      const savedLang = localStorage.getItem(STORAGE_KEY_LANG);
+      const savedDiff = localStorage.getItem(STORAGE_KEY_DIFFICULTY);
+
+      if (savedLang) languageSelect.value = savedLang;
+      if (savedDiff) difficultySelect.value = savedDiff;
+
+      const savedWords   = localStorage.getItem(STORAGE_KEY_WORDS);
+      const savedLearned = localStorage.getItem(STORAGE_KEY_LEARNED);
+
+      if (savedWords) {
+        currentWords = JSON.parse(savedWords);
+        learnedSet   = new Set(savedLearned ? JSON.parse(savedLearned) : []);
+        renderCards();
+        updateProgress();
+      }
+    }
+
+    // ─── Persist State ─────────────────────────────────────────────────────
+    function persistState() {
+      localStorage.setItem(STORAGE_KEY_WORDS,      JSON.stringify(currentWords));
+      localStorage.setItem(STORAGE_KEY_LEARNED,    JSON.stringify([...learnedSet]));
+      localStorage.setItem(STORAGE_KEY_LANG,       languageSelect.value);
+      localStorage.setItem(STORAGE_KEY_DIFFICULTY, difficultySelect.value);
+    }
+
+    // ─── Fetch Vocabulary Words ─────────────────────────────────────────────
+    async function fetchWords() {
+      const language   = languageSelect.value;
+      const difficulty = difficultySelect.value;
+
+      setLoading(true);
+      hideError();
+
+      try {
+        const response = await fetch('/api/words', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          // Both language AND difficulty are sent to the server
+          body: JSON.stringify({ language, difficulty })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Something went wrong. Please try again.');
+        }
+
+        currentWords = data.words;
+        learnedSet   = new Set();    // Fresh batch — reset learned state
+        quizMode     = false;        // Reset quiz mode for new batch
+
+        persistState();
+        renderCards();
+        updateProgress();
+        updateQuizButton();
+
+      } catch (err) {
+        showError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    // ─── Custom Word Lookup ────────────────────────────────────────────────
+    async function lookupWord() {
+      const query    = lookupInput.value.trim();
+      const language = languageSelect.value;
+
+      if (!query) {
+        lookupError.textContent = 'Please type a word or phrase first.';
+        lookupError.classList.add('visible');
+        return;
+      }
+
+      // Reset previous result and error
+      lookupResult.classList.remove('visible');
+      lookupError.classList.remove('visible');
+      lookupLoading.classList.add('visible');
+      lookupBtn.disabled = true;
+
+      try {
+        const response = await fetch('/api/lookup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query, language })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Something went wrong. Please try again.');
+        }
+
+        // Populate the result card
+        lookupResultWord.textContent     = `"${query}"`;
+        lookupTranslation.textContent    = data.translation;
+        lookupPronunciation.textContent  = data.pronunciation;
+
+        // Build the two example sentences
+        lookupSentences.innerHTML = '';
+        if (Array.isArray(data.sentences)) {
+          data.sentences.forEach((sentence, i) => {
+            const div = document.createElement('div');
+            div.className = 'lookup-sentence';
+            div.textContent = `${i + 1}. "${escapeHtml(sentence)}"`;
+            lookupSentences.appendChild(div);
+          });
+        }
+
+        lookupResult.classList.add('visible');
+
+      } catch (err) {
+        lookupError.textContent = err.message;
+        lookupError.classList.add('visible');
+      } finally {
+        lookupLoading.classList.remove('visible');
+        lookupBtn.disabled = false;
+      }
+    }
+
+    // ─── Toggle Quiz Mode ──────────────────────────────────────────────────
+    function toggleQuizMode() {
+      quizMode = !quizMode;
+
+      // Add/remove a class on the cards container so CSS can do the work.
+      // This approach keeps learned state completely untouched — quiz mode
+      // is purely a CSS visibility toggle, not a state change.
+      cardsContainer.classList.toggle('quiz-active', quizMode);
+
+      // When turning off quiz mode, clear any individually "revealed" cards
+      // so they go back to hidden if quiz mode is re-enabled
+      if (!quizMode) {
+        cardsContainer.querySelectorAll('.word-card.revealed').forEach(card => {
+          card.classList.remove('revealed');
+        });
+      }
+
+      updateQuizButton();
+    }
+
+    function updateQuizButton() {
+      quizBtn.classList.toggle('active', quizMode);
+      quizBtn.setAttribute('aria-pressed', quizMode.toString());
+      quizBtn.textContent = quizMode ? 'Exit Quiz Mode' : 'Quiz Mode';
+    }
+
+    // ─── Toggle Learned ────────────────────────────────────────────────────
+    function toggleLearned(index) {
+      if (learnedSet.has(index)) {
+        learnedSet.delete(index);
+      } else {
+        learnedSet.add(index);
+      }
+
+      updateCardLearnedState(index);
+      updateProgress();
+      persistState();
+    }
+
+    function updateCardLearnedState(index) {
+      const card = cardsContainer.querySelector(`[data-index="${index}"]`);
+      if (!card) return;
+
+      const btn = card.querySelector('.btn-learned');
+      const isLearned = learnedSet.has(index);
+
+      card.classList.toggle('learned', isLearned);
+      btn.textContent = isLearned ? 'Learned ✓' : 'Mark as Learned';
+      btn.setAttribute('aria-pressed', isLearned.toString());
+    }
+
+    // ─── Update Progress Indicator ────────────────────────────────────────
+    function updateProgress() {
+      const count = learnedSet.size;
+      const total = currentWords.length;
+
+      progressLabel.textContent = `${count} / ${total} learned`;
+      const pct = total > 0 ? (count / total) * 100 : 0;
+      progressFill.style.width = `${pct}%`;
+      progressTrack.setAttribute('aria-valuenow', count);
+    }
+
+    // ─── Render All Cards ──────────────────────────────────────────────────
+    function renderCards() {
+      emptyState.remove();
+
+      const grid = document.createElement('div');
+      grid.className = 'cards-grid';
+
+      currentWords.forEach((wordObj, index) => {
+        const isLearned = learnedSet.has(index);
+        grid.appendChild(createCardElement(wordObj, index, isLearned));
+      });
+
+      cardsContainer.innerHTML = '';
+
+      // Re-apply quiz-active class if quiz mode was on (e.g. on init restore)
+      if (quizMode) cardsContainer.classList.add('quiz-active');
+
+      cardsContainer.appendChild(grid);
+      statusRow.classList.add('visible');
+    }
+
+    // ─── Build a Single Card Element ───────────────────────────────────────
+    function createCardElement(wordObj, index, isLearned) {
+      const card = document.createElement('article');
+      card.className = 'word-card' + (isLearned ? ' learned' : '');
+      card.setAttribute('data-index', index);
+
+      card.innerHTML = `
+        <div class="learned-badge" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+
+        <div class="card-word">${escapeHtml(wordObj.word)}</div>
+
+        <div class="card-translation">
+          <span>Translation: </span>${escapeHtml(wordObj.translation)}
+        </div>
+
+        <!-- Reveal button: only visible (via CSS) when quiz mode is active -->
+        <button class="btn-reveal" aria-label="Reveal translation for ${escapeHtml(wordObj.word)}">
+          Reveal Translation
+        </button>
+
+        <div class="card-sentence">"${escapeHtml(wordObj.sentence)}"</div>
+
+        <button
+          class="btn-learned"
+          aria-pressed="${isLearned}"
+          aria-label="Mark ${escapeHtml(wordObj.word)} as learned"
+        >${isLearned ? 'Learned ✓' : 'Mark as Learned'}</button>
+      `;
+
+      // Mark as learned toggle — works independently of quiz mode
+      card.querySelector('.btn-learned').addEventListener('click', () => {
+        toggleLearned(index);
+      });
+
+      // Reveal translation in quiz mode
+      card.querySelector('.btn-reveal').addEventListener('click', () => {
+        card.classList.add('revealed');
+      });
+
+      return card;
+    }
+
+    // ─── UI Helpers ────────────────────────────────────────────────────────
+    function setLoading(isLoading) {
+      fetchBtn.disabled = isLoading;
+      fetchBtn.textContent = isLoading ? 'Loading…' : 'Get New Words';
+      loadingIndicator.classList.toggle('visible', isLoading);
+      const grid = cardsContainer.querySelector('.cards-grid');
+      if (grid) grid.style.opacity = isLoading ? '0.4' : '1';
+    }
+
+    function showError(message) {
+      errorMessage.textContent = message;
+      errorMessage.classList.add('visible');
+    }
+
+    function hideError() {
+      errorMessage.classList.remove('visible');
+    }
+
+    // Escape HTML to prevent XSS when inserting dynamic content
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.appendChild(document.createTextNode(String(str)));
+      return div.innerHTML;
+    }
+
+    // ─── Event Listeners ──────────────────────────────────────────────────
+    fetchBtn.addEventListener('click', fetchWords);
+    quizBtn.addEventListener('click', toggleQuizMode);
+    lookupBtn.addEventListener('click', lookupWord);
+
+    // Allow pressing Enter in the lookup input to trigger lookup
+    lookupInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') lookupWord();
+    });
+
+    // Persist selects on change
+    languageSelect.addEventListener('change', () => {
+      localStorage.setItem(STORAGE_KEY_LANG, languageSelect.value);
+    });
+    difficultySelect.addEventListener('change', () => {
+      localStorage.setItem(STORAGE_KEY_DIFFICULTY, difficultySelect.value);
+    });
+
+    // ─── Boot ──────────────────────────────────────────────────────────────
+    init();
+  </script>
+</body>
+</html>

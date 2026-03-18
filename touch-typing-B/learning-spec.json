@@ -1,0 +1,54 @@
+{
+  "app_name": "Touch Typing",
+  "module": 1,
+  "role": "demo",
+  "videos_covered": ["1", "2", "3", "4", "5"],
+  "primary_concept": "Scoping an app into phases using MVP thinking — building only what is needed first, then adding features intentionally in a second phase",
+  "secondary_concepts": [
+    "Translating a vague idea into a structured plan (goal, input, output, layout, features)",
+    "Distinguishing functional vs. cosmetic issues when debugging",
+    "Saving work at stable checkpoints before making new changes",
+    "Recognizing and avoiding context rot by starting fresh chats between phases"
+  ],
+  "tech_constraints": {
+    "allowed_persistence": ["none"],
+    "allowed_apis": ["none"],
+    "deployment_required": false,
+    "max_phases": 2
+  },
+  "mvp_features": [
+    "Display a short passage of text for the user to type",
+    "Capture keystrokes and compare them against the target text in real time",
+    "Highlight correct characters in green and incorrect characters in red as the user types",
+    "Show a completion screen with words-per-minute (WPM) and accuracy percentage when the passage is finished",
+    "Provide a restart button to reset the session with the same passage"
+  ],
+  "stretch_features": [
+    "Multiple built-in passages the user can choose from",
+    "A difficulty selector that changes passage length or complexity",
+    "A running WPM counter displayed live during typing",
+    "Visual or audio feedback on completion (e.g., a congratulations animation)",
+    "Keyboard heatmap showing which keys the user mistyped most often"
+  ],
+  "forbidden_features": [
+    "Saving high scores or session history — requires localStorage or a database, which is not introduced until Module 2",
+    "A user account or leaderboard — requires a database and identity management, covered in Module 2 and beyond",
+    "Fetching passages from an external API — requires API integration, which is not introduced until Module 3",
+    "LLM-generated passages or feedback — requires an LLM API, which is not introduced until Module 3",
+    "Any form of data persistence between sessions — this is the defining constraint of Module 1"
+  ],
+  "learner_outcome": "Learners will be able to plan, scope, and build the Touch Typing app across two deliberate phases — writing a structured PRD before coding, making intentional decisions about what to include in the MVP versus what to defer, and recovering from a broken state using versioning and a fresh chat context.",
+  "instructor_talking_points": [
+    "Start by writing a one-paragraph plain-English description of the app before opening the coding tool — this demonstrates why structured planning produces better first results than jumping straight into prompting",
+    "When scoping Phase 1, explicitly cut the high-score feature and explain why: saving data requires persistence, which the learner does not know yet — this is the clearest live example of a forbidden feature in Module 1",
+    "After Phase 1 is working, demonstrate saving the project before making any Phase 2 changes — reinforce the habit of checkpointing at stable moments",
+    "If a cosmetic bug appears (e.g., text color not quite right), name it as cosmetic and deprioritize it in favor of a functional issue — this models the triage skill introduced in Video 1 and formalized in Video 5"
+  ],
+  "scope_warnings": [
+    "Adding a high-score tracker: tempting because typing games always have leaderboards, but storing scores between sessions requires localStorage or a database — this belongs in Module 2",
+    "Fetching random passages from a quote or text API: sounds like a small quality-of-life improvement, but it requires an external API call — this belongs in Module 3",
+    "Adding a login so users can compare scores: requires both a database and authentication — two concepts well beyond Module 1 scope",
+    "Building a full settings panel (font size, theme, sound toggles): these are cosmetic features that multiply prompt complexity without teaching any new planning concept — typical scope creep in the UI polish phase",
+    "Asking the AI to generate personalized passages using an LLM: conflates the coding tool (used for building) with an LLM as a product feature — this distinction is explicitly taught in Module 3 Video 4 and should not appear in Module 1"
+  ]
+}

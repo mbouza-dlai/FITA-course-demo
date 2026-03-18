@@ -1,0 +1,23 @@
+Sleep Pattern App (JSON Storage)
+
+This version stores app data in a backend JSON file so it persists across browsers.
+
+Why you must run it this way:
+Opening the HTML file directly skips the backend, so the app cannot read/write the shared JSON file. Running via http://localhost:3000 ensures all browsers use the same backend and data file.
+
+Run the app
+1. Open a terminal in this folder.
+2. Install dependencies:
+	npm install
+3. Start the server:
+	npm start
+4. Open in your browser:
+	http://localhost:3000
+
+API endpoints
+- GET /api/data   -> loads persisted state
+- POST /api/data  -> saves full state snapshot
+
+Persistence file
+- data.json (created automatically on first run)
+

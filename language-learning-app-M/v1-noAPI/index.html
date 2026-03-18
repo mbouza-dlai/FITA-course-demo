@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Language Learning Notes</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="styles/style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>Language Learning Notes</h1>
+    <p class="subtitle">Organize vocabulary, grammar, and phrases by language.</p>
+  </header>
+
+  <main class="app-main">
+    <!-- Add Note Form -->
+    <section class="card form-card">
+      <h2>Add / Edit Note</h2>
+      <form id="noteForm">
+        <input type="hidden" id="noteId" />
+
+        <div class="form-row">
+          <label for="languageSelect">Language</label>
+          <select id="languageSelect" required>
+            <option value="" disabled selected>Select language</option>
+            <option value="Portuguese">Portuguese</option>
+            <option value="Spanish">Spanish</option>
+            <option value="French">French</option>
+            <option value="German">German</option>
+            <option value="Italian">Italian</option>
+            <option value="English">English</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <label for="categorySelect">Category</label>
+          <select id="categorySelect" required>
+            <option value="Vocabulary">Vocabulary</option>
+            <option value="Verbs">Verbs</option>
+            <option value="Grammar">Grammar</option>
+            <option value="Phrases">Phrases</option>
+            <option value="General Notes">General Notes</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <label for="noteContent">Note</label>
+          <textarea
+            id="noteContent"
+            rows="4"
+            placeholder="Type your note here..."
+            required
+          ></textarea>
+        </div>
+
+        <div class="form-row">
+          <label for="tagsInput">Tags</label>
+          <input
+            id="tagsInput"
+            type="text"
+            placeholder="E.g. food, irregular, travel (separate with commas)"
+          />
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn primary" id="saveNoteBtn">Add Note</button>
+          <button type="button" class="btn ghost" id="cancelEditBtn" style="display:none">
+            Cancel Edit
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Filters and Export -->
+    <section class="card control-card">
+      <h2>Filter &amp; Export</h2>
+      <div class="filters">
+        <div class="form-row">
+          <label for="searchInput">Search</label>
+          <input
+            id="searchInput"
+            type="text"
+            placeholder="Filter by text, tag, language, or category..."
+          />
+        </div>
+        <div class="form-row-inline">
+          <div class="form-row">
+            <label for="filterLanguage">Language</label>
+            <select id="filterLanguage">
+              <option value="">All</option>
+              <option value="Portuguese">Portuguese</option>
+              <option value="Spanish">Spanish</option>
+              <option value="French">French</option>
+              <option value="German">German</option>
+              <option value="Italian">Italian</option>
+              <option value="English">English</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <label for="filterCategory">Category</label>
+            <select id="filterCategory">
+              <option value="">All</option>
+              <option value="Vocabulary">Vocabulary</option>
+              <option value="Verbs">Verbs</option>
+              <option value="Grammar">Grammar</option>
+              <option value="Phrases">Phrases</option>
+              <option value="General Notes">General Notes</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="export-actions">
+        <button id="exportTxtBtn" class="btn secondary">Export as TXT</button>
+        <button id="exportCsvBtn" class="btn secondary">Export as CSV</button>
+      </div>
+    </section>
+
+    <!-- Notes Display -->
+    <section class="card notes-card">
+      <div class="notes-header">
+        <h2>Notes</h2>
+        <p class="notes-hint">
+          Notes are grouped by language and category. Click a section header to collapse or expand.
+        </p>
+      </div>
+      <div id="notesContainer" class="notes-container">
+        <!-- Notes are rendered here by JavaScript -->
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <small>Front-end only – notes are stored in memory and will reset when the page reloads.</small>
+  </footer>
+
+  <script src="scripts/app.js"></script>
+</body>
+</html>

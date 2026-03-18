@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reminder App</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app">
+      <header class="app-header">
+        <h1>Reminder App</h1>
+        <p class="subtitle">Create, track, and manage reminders in one place.</p>
+      </header>
+
+      <section class="card" aria-label="Create reminder">
+        <h2>Add Reminder</h2>
+
+        <form id="reminderForm" class="reminder-form" novalidate>
+          <div class="field">
+            <label for="reminderTitle">Title <span aria-hidden="true">*</span></label>
+            <input id="reminderTitle" name="reminderTitle" type="text" maxlength="120" required />
+          </div>
+
+          <div class="field-grid field-grid--3">
+            <div class="field">
+              <label for="reminderDate">Date <span aria-hidden="true">*</span></label>
+              <input id="reminderDate" name="reminderDate" type="date" required />
+            </div>
+            <div class="field">
+              <label for="reminderTime">Time <span aria-hidden="true">*</span></label>
+              <input id="reminderTime" name="reminderTime" type="time" required />
+            </div>
+            <div class="field">
+              <label for="reminderRepeat">Repeat</label>
+              <select id="reminderRepeat" name="reminderRepeat">
+                <option value="none">No repeat</option>
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="reminderLabel">Label <span aria-hidden="true">*</span></label>
+            <select id="reminderLabel" name="reminderLabel" required>
+              <option value="">Select a label</option>
+              <option value="Medication">Medication</option>
+              <option value="Water">Water</option>
+              <option value="Meeting">Meeting</option>
+              <option value="Workout">Workout</option>
+              <option value="General">General</option>
+              <option value="__custom__">Custom&hellip;</option>
+            </select>
+            <input id="reminderCustomLabel" name="reminderCustomLabel" type="text" class="custom-label-input" maxlength="60" placeholder="Type your custom label&hellip;" hidden />
+          </div>
+          <p id="formMessage" class="message" role="status" aria-live="polite"></p>
+          <button type="submit">Add Reminder</button>
+        </form>
+      </section>
+
+      <section class="card" aria-label="Calendar">
+        <div class="cal-header">
+          <button type="button" id="calPrev" class="secondary cal-nav" aria-label="Previous month">&lsaquo;</button>
+          <h2 id="calTitle" class="cal-title"></h2>
+          <button type="button" id="calNext" class="secondary cal-nav" aria-label="Next month">&rsaquo;</button>
+        </div>
+
+        <div class="cal-grid" id="calGrid" role="grid">
+          <div class="cal-day-name" aria-hidden="true">Sun</div>
+          <div class="cal-day-name" aria-hidden="true">Mon</div>
+          <div class="cal-day-name" aria-hidden="true">Tue</div>
+          <div class="cal-day-name" aria-hidden="true">Wed</div>
+          <div class="cal-day-name" aria-hidden="true">Thu</div>
+          <div class="cal-day-name" aria-hidden="true">Fri</div>
+          <div class="cal-day-name" aria-hidden="true">Sat</div>
+        </div>
+
+        <div id="calDayDetail" class="cal-day-detail" hidden>
+          <p class="cal-day-detail-title" id="calDayDetailTitle"></p>
+          <ul id="calDayDetailList" class="cal-day-detail-list"></ul>
+        </div>
+      </section>
+
+      <section class="card" aria-label="Reminder list">
+        <div class="list-header">
+          <h2>Active Reminders</h2>
+          <p id="reminderCount" class="count-pill">0 reminders</p>
+        </div>
+
+        <nav class="filters" aria-label="Reminder filters">
+          <button type="button" class="filter-button is-active" data-filter="all">All</button>
+          <button type="button" class="filter-button" data-filter="active">Active</button>
+          <button type="button" class="filter-button" data-filter="completed">Completed</button>
+        </nav>
+
+        <p id="notificationInfo" class="notification-info" role="status" aria-live="polite"></p>
+        <ul id="reminderList" class="reminder-list"></ul>
+      </section>
+    </main>
+
+    <template id="reminderTemplate">
+      <li class="reminder-item">
+        <div class="reminder-main">
+          <div class="title-row">
+            <p class="reminder-title"></p>
+            <span class="reminder-label"></span>
+          </div>
+          <p class="reminder-when"></p>
+          <p class="reminder-repeat"></p>
+          <p class="reminder-status"></p>
+        </div>
+
+        <form class="edit-form" hidden>
+          <div class="field">
+            <label>Title <span aria-hidden="true">*</span></label>
+            <input type="text" class="edit-title" maxlength="120" required />
+          </div>
+
+          <div class="field-grid field-grid--3">
+            <div class="field">
+              <label>Date <span aria-hidden="true">*</span></label>
+              <input type="date" class="edit-date" required />
+            </div>
+            <div class="field">
+              <label>Time <span aria-hidden="true">*</span></label>
+              <input type="time" class="edit-time" required />
+            </div>
+            <div class="field">
+              <label>Repeat</label>
+              <select class="edit-repeat">
+                <option value="none">No repeat</option>
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Label <span aria-hidden="true">*</span></label>
+            <select class="edit-label" required>
+              <option value="Medication">Medication</option>
+              <option value="Water">Water</option>
+              <option value="Meeting">Meeting</option>
+              <option value="Workout">Workout</option>
+              <option value="General">General</option>
+              <option value="__custom__">Custom&hellip;</option>
+            </select>
+            <input type="text" class="edit-custom-label custom-label-input" maxlength="60" placeholder="Type your custom label&hellip;" hidden />
+          </div>
+          <p class="edit-message message" role="status" aria-live="polite"></p>
+
+          <div class="edit-actions">
+            <button type="submit" class="secondary">Save</button>
+            <button type="button" class="secondary cancel-edit">Cancel</button>
+          </div>
+        </form>
+
+        <div class="actions">
+          <button type="button" class="secondary edit-reminder">Edit</button>
+          <button type="button" class="secondary toggle-reminder">Mark Complete</button>
+          <button type="button" class="danger delete-reminder">Delete</button>
+        </div>
+      </li>
+    </template>
+
+    <script defer src="./src/app.js"></script>
+  </body>
+</html>

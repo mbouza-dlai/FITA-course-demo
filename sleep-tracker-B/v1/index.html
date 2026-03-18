@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sleep Tracker</title>
+  <style>
+    /* ── Design tokens ── */
+    :root {
+      --color-bg: #0f1117;
+      --color-surface: #1c1f2e;
+      --color-border: #2e3248;
+      --color-accent: #7c6af7;
+      --color-accent-hover: #6557e0;
+      --color-danger: #e05c5c;
+      --color-danger-hover: #c94848;
+      --color-text: #e8eaf6;
+      --color-text-muted: #8b90b0;
+      --color-text-label: #b0b5d0;
+      --radius: 10px;
+      --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+      --font: "Inter", "Segoe UI", system-ui, sans-serif;
+    }
+
+    /* ── Reset & base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--color-bg);
+      color: var(--color-text);
+      font-family: var(--font);
+      min-height: 100vh;
+      padding: 48px 16px 80px;
+    }
+
+    /* ── Page layout ── */
+    .page-wrapper {
+      max-width: 620px;
+      margin: 0 auto;
+    }
+
+    /* ── Header ── */
+    .page-header {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+    .page-header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: var(--color-text);
+    }
+    .page-header p {
+      margin-top: 8px;
+      color: var(--color-text-muted);
+      font-size: 0.95rem;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      padding: 28px;
+      box-shadow: var(--shadow);
+    }
+
+    /* ── Form ── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    @media (max-width: 500px) {
+      .form-grid { grid-template-columns: 1fr; }
+    }
+
+    .field label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--color-text-label);
+      margin-bottom: 6px;
+    }
+
+    .field input {
+      width: 100%;
+      background: var(--color-bg);
+      border: 1px solid var(--color-border);
+      border-radius: 7px;
+      color: var(--color-text);
+      font-family: var(--font);
+      font-size: 0.9rem;
+      padding: 10px 12px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .field input:focus {
+      border-color: var(--color-accent);
+    }
+
+    /* Style the native date/time picker icon to match dark theme */
+    .field input::-webkit-calendar-picker-indicator {
+      filter: invert(0.7);
+      cursor: pointer;
+    }
+
+    .btn-submit {
+      width: 100%;
+      background: var(--color-accent);
+      color: #fff;
+      border: none;
+      border-radius: 7px;
+      font-family: var(--font);
+      font-size: 0.95rem;
+      font-weight: 600;
+      padding: 12px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-submit:hover { background: var(--color-accent-hover); }
+
+    /* ── Error message ── */
+    .error-msg {
+      color: var(--color-danger);
+      font-size: 0.85rem;
+      margin-top: 10px;
+      min-height: 20px;
+    }
+
+    /* ── Divider ── */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--color-border);
+      margin: 28px 0;
+    }
+
+    /* ── Entries list ── */
+    .entries-section h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 16px;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: var(--color-text-muted);
+      font-size: 0.9rem;
+      padding: 32px 0;
+    }
+
+    .entry-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--color-border);
+    }
+    .entry-item:last-child { border-bottom: none; }
+
+    .entry-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+    }
+    .entry-date {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--color-text);
+    }
+    .entry-times {
+      font-size: 0.82rem;
+      color: var(--color-text-muted);
+    }
+
+    .entry-hours {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--color-accent);
+      white-space: nowrap;
+      min-width: 70px;
+      text-align: right;
+    }
+
+    .btn-delete {
+      background: transparent;
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      color: var(--color-text-muted);
+      font-family: var(--font);
+      font-size: 0.78rem;
+      padding: 5px 10px;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      white-space: nowrap;
+    }
+    .btn-delete:hover {
+      background: var(--color-danger);
+      border-color: var(--color-danger);
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <div class="page-wrapper">
+
+    <!-- Header -->
+    <header class="page-header">
+      <h1>Sleep Tracker</h1>
+      <p>Log your nightly sleep and watch your history grow.</p>
+    </header>
+
+    <!-- Entry form -->
+    <div class="card">
+      <form id="sleep-form" novalidate>
+        <div class="form-grid">
+          <div class="field">
+            <label for="input-date">Date</label>
+            <input type="date" id="input-date" required />
+          </div>
+          <div class="field">
+            <label for="input-bedtime">Bedtime</label>
+            <input type="time" id="input-bedtime" required />
+          </div>
+          <div class="field">
+            <label for="input-waketime">Wake Time</label>
+            <input type="time" id="input-waketime" required />
+          </div>
+        </div>
+        <button type="submit" class="btn-submit">Log Sleep</button>
+        <p class="error-msg" id="form-error" aria-live="polite"></p>
+      </form>
+
+      <hr class="divider" />
+
+      <!-- Entries -->
+      <section class="entries-section">
+        <h2>Sleep History</h2>
+        <div id="entries-list"></div>
+      </section>
+    </div>
+
+  </div>
+
+  <script>
+    // ─── Constants ───────────────────────────────────────────────
+    const STORAGE_KEY = 'sleepTrackerEntries';
+
+    // ─── State ───────────────────────────────────────────────────
+    // Each entry: { id, date (YYYY-MM-DD), bedtime (HH:MM), waketime (HH:MM), hours }
+    let entries = [];
+
+    // ─── Persistence helpers ─────────────────────────────────────
+
+    /** Load entries from localStorage, or return empty array. */
+    function loadEntries() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch (e) {
+        // If stored data is corrupt, start fresh
+        return [];
+      }
+    }
+
+    /** Save the current entries array to localStorage. */
+    function saveEntries() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+    }
+
+    // ─── Hours calculation ────────────────────────────────────────
+
+    /**
+     * Calculate hours slept given a bedtime and wake time (both "HH:MM" strings).
+     * Handles the normal overnight case where bedtime is in the evening and
+     * wake time is the following morning (e.g., 23:00 → 07:30 = 8.5 hours).
+     */
+    function calcHours(bedtime, waketime) {
+      const [bH, bM] = bedtime.split(':').map(Number);
+      const [wH, wM] = waketime.split(':').map(Number);
+
+      // Convert both times to minutes-since-midnight
+      let bedMins = bH * 60 + bM;
+      let wakeMins = wH * 60 + wM;
+
+      // If wake time is not after bedtime, assume it's the next day
+      if (wakeMins <= bedMins) {
+        wakeMins += 24 * 60; // add 24 hours
+      }
+
+      const totalMins = wakeMins - bedMins;
+      // Round to one decimal place
+      return Math.round(totalMins / 6) / 10;
+    }
+
+    // ─── Formatting helpers ───────────────────────────────────────
+
+    /** Format a "YYYY-MM-DD" date string as a readable label like "March 15, 2026". */
+    function formatDate(dateStr) {
+      // Parse as local date to avoid timezone-shift issues
+      const [year, month, day] = dateStr.split('-').map(Number);
+      const d = new Date(year, month - 1, day);
+      return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    }
+
+    /** Format a "HH:MM" (24-hour) time string as "h:MM AM/PM". */
+    function formatTime(timeStr) {
+      const [h, m] = timeStr.split(':').map(Number);
+      const period = h >= 12 ? 'PM' : 'AM';
+      const hour12 = h % 12 === 0 ? 12 : h % 12;
+      const mins = String(m).padStart(2, '0');
+      return `${hour12}:${mins} ${period}`;
+    }
+
+    // ─── Render ───────────────────────────────────────────────────
+
+    /** Re-render the entries list from the current state. */
+    function renderEntries() {
+      const container = document.getElementById('entries-list');
+
+      if (entries.length === 0) {
+        container.innerHTML = '<p class="empty-state">No entries yet — log your first night above.</p>';
+        return;
+      }
+
+      // Build list HTML; entries are already stored newest-first
+      const html = entries.map(entry => `
+        <div class="entry-item" data-id="${entry.id}">
+          <div class="entry-info">
+            <span class="entry-date">${formatDate(entry.date)}</span>
+            <span class="entry-times">Bed ${formatTime(entry.bedtime)} &rarr; Wake ${formatTime(entry.waketime)}</span>
+          </div>
+          <span class="entry-hours">${entry.hours} hrs</span>
+          <button class="btn-delete" data-id="${entry.id}">Delete</button>
+        </div>
+      `).join('');
+
+      container.innerHTML = html;
+    }
+
+    // ─── Delete handler ───────────────────────────────────────────
+
+    /**
+     * Listen for delete clicks using event delegation on the container.
+     * This approach works regardless of when entries are rendered.
+     */
+    document.getElementById('entries-list').addEventListener('click', function(e) {
+      const btn = e.target.closest('.btn-delete');
+      if (!btn) return;
+
+      const id = btn.dataset.id;
+      // Remove the entry with the matching id
+      entries = entries.filter(entry => entry.id !== id);
+      saveEntries();   // persist the deletion
+      renderEntries(); // update the UI
+    });
+
+    // ─── Form submit handler ──────────────────────────────────────
+
+    document.getElementById('sleep-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const dateVal    = document.getElementById('input-date').value;
+      const bedtimeVal = document.getElementById('input-bedtime').value;
+      const waketimeVal = document.getElementById('input-waketime').value;
+      const errorEl    = document.getElementById('form-error');
+
+      // Basic validation
+      if (!dateVal || !bedtimeVal || !waketimeVal) {
+        errorEl.textContent = 'Please fill in all three fields before submitting.';
+        return;
+      }
+      errorEl.textContent = '';
+
+      const hours = calcHours(bedtimeVal, waketimeVal);
+
+      // Build new entry object with a unique id (timestamp + random suffix)
+      const newEntry = {
+        id: Date.now().toString() + Math.random().toString(36).slice(2, 7),
+        date: dateVal,
+        bedtime: bedtimeVal,
+        waketime: waketimeVal,
+        hours: hours
+      };
+
+      // Add newest entries to the front of the array
+      entries.unshift(newEntry);
+      saveEntries();
+      renderEntries();
+
+      // Reset the form (keep the date so users can log multiple nights quickly)
+      document.getElementById('input-bedtime').value = '';
+      document.getElementById('input-waketime').value = '';
+    });
+
+    // ─── Initialise on load ───────────────────────────────────────
+    entries = loadEntries();
+    renderEntries();
+
+    // Pre-fill today's date for convenience
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm   = String(today.getMonth() + 1).padStart(2, '0');
+    const dd   = String(today.getDate()).padStart(2, '0');
+    document.getElementById('input-date').value = `${yyyy}-${mm}-${dd}`;
+  </script>
+</body>
+</html>
