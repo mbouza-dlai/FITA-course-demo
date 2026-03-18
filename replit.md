@@ -2,59 +2,61 @@
 
 ## Overview
 
-A course demo showcase app that presents multiple educational web applications built throughout a software development course. It features a navigation UI that organizes all demo apps by module.
+A course demo showcase app presenting all educational web applications built throughout a software development course. Features a navigation UI organized by module, with each app opening in an iframe alongside its prompts/learner log.
 
 ## Architecture
 
-- **Main entry**: `server.js` — Express server on port 5000 serving the navigation UI and all sub-apps
-- **Navigation UI**: `public/index.html` — Single-page vanilla JS navigation with breadcrumbs and tab-based app/prompts view
-- **Sub-apps**: All served as static files at `/apps/<path>` routes
+- **Main entry**: `server.js` — Express server on port 5000
+- **Navigation UI**: `public/index.html` — Single-page vanilla JS navigation
+- **OpenAI**: Replit AI Integration (env vars `AI_INTEGRATIONS_OPENAI_API_KEY` + `AI_INTEGRATIONS_OPENAI_BASE_URL`)
 
-## Project Structure
+## App Types
 
-```
-/
-├── server.js              # Main Express server (port 5000)
-├── package.json           # Dependencies: express
-├── public/
-│   └── index.html         # Navigation SPA
-├── touch-typing-B/        # Module 1 - Touch Typing (Builder, v1/v2)
-├── unit-converter-M/      # Module 1 - Unit Converter (Model)
-├── to-do-app-M/           # Module 1 - To-Do App (Model)
-├── pomodoro-timer-B/      # Module 1 - Pomodoro Timer (Builder, v1/v2/v3)
-├── reminder-app-M/        # Module 1 - Reminder App (Model)
-├── sleep-tracker-B/       # Module 2 - Sleep Tracker (Builder, v1/v2/v3)
-├── sleep-pattern-app-M/   # Module 2 - Sleep Pattern App (Model, localStorage/json-storage)
-├── trivia-game-B/         # Module 3 - Trivia Game (Builder, v1/v2)
-├── trivia-game-retro-M/   # Module 3 - Trivia Game Retro React (Model)
-├── language-learning-app-M/  # Capstone - Language Learning (Model, v1/v2)
-├── language-learning-B/   # Capstone - Language Learning (Builder, v1/v2/v3)
-├── recipe-vault-cocobean-M/  # Capstone - Recipe Vault React (Model)
-├── flashcards-app-M/      # Throughline - Flashcards (Model, v1/v2/v3)
-└── flashcards-B/          # Throughline - Flashcards (Builder, v1/v2/v3)
-```
+### Static HTML apps (served directly)
+- `touch-typing-B/v1`, `v2`
+- `unit-converter-M`
+- `to-do-app-M`
+- `pomodoro-timer-B/v1`, `v2`, `v3`
+- `reminder-app-M`
+- `sleep-tracker-B/v1`, `v3`
+- `sleep-pattern-app-M/localStorage`
+- `trivia-game-B/v1`, `v2`
+- `language-learning-app-M/v1-noAPI`
+- `flashcards-app-M/v1`, `v2`
+- `flashcards-B/v1`, `v2`, `v3`
+- `language-learning-B/v1`, `v2`, `v3` (public/ dirs)
 
-## Navigation Structure
+### Built React/Vite apps
+- `trivia-game-retro-M` → built to `dist/`, served at `/apps/trivia-game-retro-M/` (Lovable)
+- `recipe-vault-cocobean-M` → built to `dist/`, served at `/apps/recipe-vault-M/` (Cocobean)
 
-- **Main Menu** → Module 1, Module 2, Module 3, Capstone, Throughline
-- **Module 1**: Touch Typing (B), Unit Converter (M), To-Do (M), Pomodoro (B), Reminder (M)
-- **Module 2**: Sleep Tracker (B), Sleep Pattern App (M)
-- **Module 3**: Trivia Game (B), Trivia Game Retro (M)
-- **Capstone**: Language Learning (M+B), Recipe Vault (M)
-- **Throughline**: Flashcards (M+B)
+### Apps with server-side persistence (JSON files)
+- `sleep-tracker-B/v2` — `/apps/sleep-tracker-B/v2/api/data|entries`
+- `sleep-pattern-app-M/json-storage` — `/apps/sleep-pattern-app-M/json-storage/api/data`
 
-## App Viewer Features
+### Apps with OpenAI API integration
+- `flashcards-app-M/v3-withLLM` → calls `/api/generate`
+- `language-learning-B/v2`, `v3` → calls `/api/words`, `/api/lookup`
+- `language-learning-app-M/V2-API` → calls `/language-learning/api/vocabulary-lookup`
+- All served via main server's OpenAI routes
 
-- Each app opens in an iframe with an "App" tab and a "Prompts" tab
-- Prompts tab loads and renders the `prompts-learner.md` content
-- Markdown is rendered client-side with syntax highlighting
+## API Routes (main server)
 
-## Notes
-
-- Apps with server-side Node.js backends (LLM, JSON persistence) are integrated into the main server
-- `trivia-game-retro-M` and `recipe-vault-cocobean-M` are Vite/React apps served as source (not built)
-- Some apps require an OpenAI API key (`OPENAI_API_KEY`) for LLM features
+| Route | Purpose |
+|-------|---------|
+| `POST /api/words` | Vocabulary words by language + difficulty |
+| `POST /api/lookup` | Word/phrase lookup by language |
+| `POST /api/generate` | Flashcard AI generation |
+| `POST /language-learning/api/vocabulary-lookup` | Language M v2 vocab lookup |
+| `GET /api/prompts?file=path` | Read prompts-learner.md content |
 
 ## Workflow
 
 - **Start application**: `node server.js` on port 5000
+
+## Build Commands (if rebuilding React apps)
+
+```bash
+cd trivia-game-retro-M && npm install && npx vite build
+cd recipe-vault-cocobean-M && npm install && npm run build
+```
