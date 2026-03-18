@@ -379,16 +379,18 @@
         return;
       }
 
-      container.innerHTML = entries.map(entry => `
-        <div class="entry-item" data-id="${entry.id}">
-          <div class="entry-info">
-            <span class="entry-date">${formatDate(entry.date)}</span>
-            <span class="entry-times">Bed ${formatTime(entry.bedtime)} &rarr; Wake ${formatTime(entry.waketime)}</span>
+      container.innerHTML = entries
+        .filter(e => e.date && e.bedtime && e.waketime)
+        .map(entry => `
+          <div class="entry-item" data-id="${entry.id}">
+            <div class="entry-info">
+              <span class="entry-date">${formatDate(entry.date)}</span>
+              <span class="entry-times">Bed ${formatTime(entry.bedtime)} &rarr; Wake ${formatTime(entry.waketime)}</span>
+            </div>
+            <span class="entry-hours">${entry.hours ?? calcHours(entry.bedtime, entry.waketime)} hrs</span>
+            <button class="btn-delete" data-id="${entry.id}">Delete</button>
           </div>
-          <span class="entry-hours">${entry.hours} hrs</span>
-          <button class="btn-delete" data-id="${entry.id}">Delete</button>
-        </div>
-      `).join('');
+        `).join('');
     }
 
     // ─── Status message helpers ────────────────────────────────────────────────
