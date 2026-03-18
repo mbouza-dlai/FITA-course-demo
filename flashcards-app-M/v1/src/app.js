@@ -1,6 +1,3 @@
-const STORAGE_KEY = "flashcards-app-cards";
-const HINT_DISMISSED_KEY = "flashcards-app-flip-hint-dismissed";
-
 const flashcardForm = document.getElementById("flashcard-form");
 const questionInput = document.getElementById("question-input");
 const answerInput = document.getElementById("answer-input");
@@ -19,10 +16,10 @@ const flashcardTemplate = document.getElementById("flashcard-item-template");
 const tabButtons = Array.from(document.querySelectorAll(".tab-btn"));
 const tabPanels = Array.from(document.querySelectorAll(".tab-panel"));
 
-let cards = loadCards();
+let cards = [];
 let currentIndex = 0;
 let showingFront = true;
-let flipHintDismissed = localStorage.getItem(HINT_DISMISSED_KEY) === "true";
+let flipHintDismissed = false;
 let editingCardId = null;
 
 flashcardForm.addEventListener("submit", handleAddFlashcard);
@@ -49,24 +46,6 @@ studyCard.addEventListener("keydown", (event) => {
 
 render();
 
-function loadCards() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) {
-    return [];
-  }
-
-  try {
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveCards() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
-}
-
 function handleAddFlashcard(event) {
   event.preventDefault();
 
@@ -83,7 +62,6 @@ function handleAddFlashcard(event) {
     answer,
   });
 
-  saveCards();
   flashcardForm.reset();
 
   currentIndex = cards.length - 1;
@@ -146,7 +124,6 @@ function deleteCard(id) {
   }
 
   showingFront = true;
-  saveCards();
   render();
 }
 
@@ -190,7 +167,6 @@ function saveInlineEdit(id, listItem) {
   card.question = trimmedQuestion;
   card.answer = trimmedAnswer;
   editingCardId = null;
-  saveCards();
   render();
 }
 
@@ -371,5 +347,4 @@ function dismissFlipHint() {
   }
 
   flipHintDismissed = true;
-  localStorage.setItem(HINT_DISMISSED_KEY, "true");
 }
