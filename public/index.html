@@ -224,6 +224,19 @@
     .md pre code { background: none; padding: 0; }
     .md hr { border: none; border-top: 1px solid var(--border); margin: 1.25rem 0; }
     .md strong { color: var(--text); font-weight: 700; }
+    .md .prompt-quote {
+      background: rgba(99,179,237,0.07);
+      border-left: 3px solid var(--accent3);
+      border-radius: 0 8px 8px 0;
+      padding: 0.85rem 1.1rem;
+      margin: 0.75rem 0;
+      font-family: inherit;
+      font-size: 0.87rem;
+      color: var(--text-muted);
+      line-height: 1.65;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
 
     .no-prompts { color: var(--text-muted); font-style: italic; padding: 1rem; }
 
@@ -269,6 +282,19 @@
     .prompts-body.md code { background: var(--surface2); padding: 2px 5px; border-radius: 4px; font-family: monospace; font-size: 0.82em; }
     .prompts-body.md pre { background: var(--surface2); padding: 1rem; border-radius: 8px; overflow-x: auto; margin: 0.75rem 0; }
     .prompts-body.md pre code { background: none; padding: 0; }
+    .prompts-body.md .prompt-quote {
+      background: rgba(99,179,237,0.07);
+      border-left: 3px solid var(--accent3);
+      border-radius: 0 8px 8px 0;
+      padding: 0.85rem 1.1rem;
+      margin: 0.75rem 0;
+      font-family: inherit;
+      font-size: 0.87rem;
+      color: var(--text-muted);
+      line-height: 1.65;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
     .prompts-body.md hr { border: none; border-top: 1px solid var(--border); margin: 1.25rem 0; }
     .prompts-body.md strong { color: var(--text); font-weight: 700; }
 
@@ -894,14 +920,20 @@
     const lines = text.split('\n');
     let html = '';
     let inCode = false;
+    let codeLines = [];
 
     for (let line of lines) {
       if (line.startsWith('```')) {
-        if (inCode) { html += '</code></pre>'; inCode = false; }
-        else { html += '<pre><code>'; inCode = true; }
+        if (inCode) {
+          html += `<div class="prompt-quote">${escHtml(codeLines.join('\n'))}</div>`;
+          codeLines = [];
+          inCode = false;
+        } else {
+          inCode = true;
+        }
         continue;
       }
-      if (inCode) { html += escHtml(line) + '\n'; continue; }
+      if (inCode) { codeLines.push(line); continue; }
 
       if (line.startsWith('### ')) html += `<h3>${escHtml(line.slice(4))}</h3>`;
       else if (line.startsWith('## ')) html += `<h2>${escHtml(line.slice(3))}</h2>`;
@@ -912,7 +944,7 @@
       else if (line.trim() === '') html += '<p></p>';
       else html += `<p>${inlineHtml(line)}</p>`;
     }
-    if (inCode) html += '</code></pre>';
+    if (inCode && codeLines.length) html += `<div class="prompt-quote">${escHtml(codeLines.join('\n'))}</div>`;
 
     // Merge consecutive ul/ol items
     html = html.replace(/<\/ul>\s*<ul>/g, '');
